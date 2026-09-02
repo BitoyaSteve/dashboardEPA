@@ -1,0 +1,6 @@
+{
+  "name": "Tableau de Bord Paie EPA",
+  "description": "Dashboard principal de gestion de paie pour Établissement Public Administratif (EPA) respectant le design system ACPE.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

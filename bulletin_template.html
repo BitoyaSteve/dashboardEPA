@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Modèle Bulletin de Salaire — ACPE</title>
+<style>
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #1a1a1a; max-width: 850px; margin: 30px auto; }
+  h1 { text-align: center; color: #1F4E79; margin-bottom: 4px; }
+  .subtitle { text-align: center; margin: 0 0 4px; font-size: 15px; }
+  .period { text-align: center; font-style: italic; margin-bottom: 4px; }
+  .address { text-align: center; font-style: italic; font-size: 11px; margin-bottom: 16px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+  td, th { border: 1px solid #333; padding: 4px 6px; }
+  th { background: #D9E2F3; }
+  .num { text-align: right; }
+  .center { text-align: center; }
+  .label { font-weight: bold; background: #f4f4f4; width: 22%; }
+  .bold { font-weight: bold; }
+  .italic { font-style: italic; }
+  .no-border td { border: none; text-align: center; }
+</style>
+</head>
+<body>
+
+<h1>ACPE</h1>
+<div class="subtitle"><strong>BULLETIN DE SALAIRE</strong> — <span id="periodeLabel"></span></div>
+<div class="period" id="periodeDates"></div>
+<div class="address">Avenue Edith Lucie Bongo Ondimba, zone industrielle de Mpila | BP: 2006 - République du Congo</div>
+
+<div id="infoBlock"></div>
+<div id="mainTableBlock"></div>
+<div id="cumulsBlock"></div>
+
+<script>
+/* ============ 1. DONNÉES D'ENTRÉE (à remplacer par les données de ton app) ============ */
+const data = {
+  periode: { mois: "Mai", annee: 2026, debut: "26/04/26", fin: "25/05/26" },
+  employe: {
+    nom: "", matricule: "1048", cnss: "21363679/26",
+    dateEmbauche: "07/09/1999", anciennete: 26, indice: 1762,
+    situationMatrimoniale: "Marié(e)", enfantsCharge: 8, partsIRPP: 6,
+    fonction: "Collaborateur bureau editorial",
+    categorie: "Catégorie I Echelle 1 Echelon 2",
+    statut: "Contractuel", college: "Collaborateur",
+    localite: "BRAZZAVILLE", departement: "BRAZZAVILLE",
+    modePaiement: "Virement", rib: "BCI 30013-03500-02000730720/36", devise: "FCFA"
+  },
+  rubriques: {
+    nombreJours: 26,
+    tauxJournalier: 20330,
+    tauxAnciennete: 0.25,
+    indemniteSujetion: 50000,
+    indemniteTransport: 30000,
+    rappelEcarts: 312817,
+    cnssBasePlafond: 1023567,
+    tauxCnssPvidSalarial: 0.04,
+    tauxCnssPvidPatronal: 0.08,
+    tauxCnssPlafPatronal: 0.12277,
+    mutuelle: 10000,
+    mutraAcpe: 0,
+    itsMontant: 25664 // à remplacer par le calcul du barème IRPP (voir note plus bas)
+  },
+  cumulsAnnee: { brut: 3553750, chargesSalariales: 383033.4, chargesPatronales: 1037896.95, netImposable: 3349037 }
+};
+
+/* ============ 2. FONCTION DE CALCUL ============ */
+function calculerBulletin(d) {
+  const r = d.rubriques;
+  const salaireBase = r.nombreJours * r.tauxJournalier;
+  const primeAnciennete = salaireBase * r.tauxAnciennete;
+  const totalBrut = salaireBase + primeAnciennete + r.indemniteSujetion;
+
+  const cnssPvidSal = r.cnssBasePlafond * r.tauxCnssPvidSalarial;
+  const cnssPvidPat = r.cnssBasePlafond * r.tauxCnssPvidPatronal;
+  const cnssPlafPat = r.cnssBasePlafond * r.tauxCnssPlafPatronal;
+
+  const netImposable = totalBrut - cnssPvidSal; // base pour calcul ITS
+
+  // ITS : à remplacer par ton barème IRPP progressif officiel (fonction du netImposable et du nb de parts)
+  const its = r.itsMontant;
+
+  const totalCotisSalariales = cnssPvidSal + its + r.mutuelle + r.mutraAcpe;
+  const totalCotisPatronales = cnssPvidPat + cnssPlafPat;
+
+  const netAPayer = totalBrut - totalCotisSalariales + r.indemniteTransport + r.rappelEcarts;
+
+  return {
+    salaireBase, primeAnciennete, totalBrut,
+    cnssPvidSal, cnssPvidPat, cnssPlafPat, its,
+    totalCotisSalariales, totalCotisPatronales,
+    netImposable, netAPayer
+  };
+}
+
+/* ============ 3. FORMATAGE ============ */
+const fmt = n => n === undefined || n === null || n === '' ? '' :
+  Number(n).toLocaleString('fr-FR', { maximumFractionDigits: 2 });
+
+/* ============ 4. RENDU ============ */
+function render(d) {
+  const c = calculerBulletin(d);
+  const e = d.employe, r = d.rubriques;
+
+  document.getElementById('periodeLabel').textContent = `${d.periode.mois} ${d.periode.annee}`;
+  document.getElementById('periodeDates').textContent = `Période du ${d.periode.debut} au ${d.periode.fin}`;
+
+  document.getElementById('infoBlock').innerHTML = `
+    <table>
+      <tr><td class="label">Nom(s) et Prénom(s)</td><td>${e.nom || '—'}</td>
+          <td class="label">Localité</td><td>${e.localite}</td></tr>
+      <tr><td class="label">Matricule</td><td>${e.matricule}</td>
+          <td class="label">Département</td><td>${e.departement}</td></tr>
+      <tr><td class="label">N° CNSS</td><td>${e.cnss}</td>
+          <td class="label">Fonction</td><td>${e.fonction}</td></tr>
+      <tr><td class="label">Date Embauche</td><td>${e.dateEmbauche}</td>
+          <td class="label">Catégorie</td><td>${e.categorie}</td></tr>
+      <tr><td class="label">Ancienneté</td><td>${e.anciennete}</td>
+          <td class="label">Statut</td><td>${e.statut}</td></tr>
+      <tr><td class="label">Sit. Matrimoniale</td><td>${e.situationMatrimoniale}</td>
+          <td class="label">Collège</td><td>${e.college}</td></tr>
+      <tr><td class="label">Enfants à charge</td><td>${e.enfantsCharge}</td>
+          <td class="label">Mode de Paiement</td><td>${e.modePaiement}</td></tr>
+      <tr><td class="label">Nbre de parts IRPP</td><td>${e.partsIRPP}</td>
+          <td class="label">RIB</td><td>${e.rib}</td></tr>
+    </table>`;
+
+  document.getElementById('mainTableBlock').innerHTML = `
+    <table>
+      <tr>
+        <th>N°</th><th>Désignation</th><th>Nombre</th><th>Base</th>
+        <th colspan="3">Part salariale</th><th colspan="2">Part patronale</th>
+      </tr>
+      <tr>
+        <th></th><th></th><th></th><th></th>
+        <th>Taux</th><th>Gain</th><th>Retenue</th><th>Taux</th><th>Retenue</th>
+      </tr>
+      <tr><td class="center">1000</td><td>Salaire de base</td><td class="num">${r.nombreJours}</td>
+          <td class="num">${fmt(r.tauxJournalier)}</td><td></td><td class="num">${fmt(c.salaireBase)}</td><td></td><td></td><td></td></tr>
+      <tr><td class="center">1020</td><td>Prime ancienneté</td><td></td>
+          <td class="num">${fmt(c.salaireBase)}</td><td class="num">${r.tauxAnciennete*100}</td>
+          <td class="num">${fmt(c.primeAnciennete)}</td><td></td><td></td><td></td></tr>
+      <tr><td class="center">1060</td><td>Indemnité de sujétion</td><td></td>
+          <td class="num">${fmt(r.indemniteSujetion)}</td><td></td><td class="num">${fmt(r.indemniteSujetion)}</td><td></td><td></td><td></td></tr>
+      <tr class="bold italic"><td></td><td>Total Brut</td><td></td><td></td><td></td>
+          <td class="num">${fmt(c.totalBrut)}</td><td></td><td></td><td></td></tr>
+      <tr><td class="center">9000</td><td>Cotisation CNSS (PVID)</td><td></td>
+          <td class="num">${fmt(r.cnssBasePlafond)}</td><td class="num">4</td><td></td>
+          <td class="num">${fmt(c.cnssPvidSal)}</td><td class="num">8</td><td class="num">${fmt(c.cnssPvidPat)}</td></tr>
+      <tr><td class="center">9001</td><td>Cotisation CNSS (Plafonné)</td><td></td>
+          <td class="num">${fmt(r.cnssBasePlafond)}</td><td class="num">0</td><td></td>
+          <td class="num">0</td><td class="num">12</td><td class="num">${fmt(c.cnssPlafPat)}</td></tr>
+      <tr><td class="center">9002</td><td>Retenue ITS</td><td></td><td></td><td></td><td></td>
+          <td class="num">${fmt(c.its)}</td><td></td><td></td></tr>
+      <tr><td class="center">9003</td><td>Retenue Mutuelle (MUTRAPE)</td><td></td>
+          <td class="num">${fmt(r.mutuelle)}</td><td></td><td></td><td class="num">${fmt(r.mutuelle)}</td><td></td><td></td></tr>
+      <tr><td class="center">9004</td><td>MUTRA ACPE</td><td></td>
+          <td class="num">${fmt(r.mutraAcpe)}</td><td></td><td></td><td class="num">${fmt(r.mutraAcpe)}</td><td></td><td></td></tr>
+      <tr class="bold italic"><td></td><td>Total Cotisations</td><td></td><td></td><td></td><td></td>
+          <td class="num">${fmt(c.totalCotisSalariales)}</td><td></td><td class="num">${fmt(c.totalCotisPatronales)}</td></tr>
+      <tr><td class="center">4000</td><td>Indemnité de transport</td><td></td>
+          <td class="num">${fmt(r.indemniteTransport)}</td><td></td><td class="num">${fmt(r.indemniteTransport)}</td><td></td><td></td><td class="num">0</td></tr>
+      <tr><td class="center">9005</td><td>Rappel sur les écarts de salaire</td><td></td>
+          <td class="num">${fmt(r.rappelEcarts)}</td><td></td><td class="num">${fmt(r.rappelEcarts)}</td><td></td><td></td><td class="num">0</td></tr>
+    </table>`;
+
+  document.getElementById('cumulsBlock').innerHTML = `
+    <table>
+      <tr><th>Cumuls</th><th>Salaire Brut</th><th>Charges salariales</th><th>Charges patronales</th>
+          <th>Avantage en nature</th><th>Net imposable</th><th>Heures trav.</th><th>Heures suppl.</th><th>NET A PAYER</th></tr>
+      <tr><td class="bold">Période</td><td class="num">${fmt(c.totalBrut)}</td>
+          <td class="num">${fmt(c.totalCotisSalariales)}</td><td class="num">${fmt(c.totalCotisPatronales)}</td>
+          <td></td><td class="num">${fmt(c.netImposable)}</td><td></td><td></td>
+          <td class="num bold">${fmt(c.netAPayer)}</td></tr>
+      <tr><td class="bold">Années</td><td class="num">${fmt(d.cumulsAnnee.brut)}</td>
+          <td class="num">${fmt(d.cumulsAnnee.chargesSalariales)}</td><td class="num">${fmt(d.cumulsAnnee.chargesPatronales)}</td>
+          <td></td><td class="num">${fmt(d.cumulsAnnee.netImposable)}</td><td></td><td></td><td></td></tr>
+    </table>`;
+}
+
+render(data);
+</script>
+</body>
+</html>
