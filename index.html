@@ -24,6 +24,149 @@
     <!-- Overlay sombre pour menu mobile -->
     <div id="sidebar-overlay" class="sidebar-overlay" aria-hidden="true"></div>
 
+    <!-- ====================================================================
+         0. SPLASH SCREEN (Logo officiel ACPE + Animation d'initialisation)
+         ==================================================================== -->
+    <div id="acpe-splash" class="acpe-splash-screen" role="dialog" aria-modal="true" aria-label="Initialisation ACPE">
+      <div class="acpe-splash-content">
+        <div class="acpe-splash-logo-wrap">
+          <img src="/acpe-logo%20ACPE.png" alt="Logo Officiel ACPE" />
+        </div>
+        <h1 class="acpe-splash-title">AGENCE CONGOLAISE POUR L'EMPLOI</h1>
+        <div class="acpe-splash-subtitle">Plateforme de Gestion de la Paie • Établissement Public Administratif</div>
+        <div class="acpe-splash-spinner-wrap" aria-hidden="true">
+          <svg class="acpe-splash-spinner" viewBox="0 0 50 50">
+            <circle class="acpe-splash-spinner-track" cx="25" cy="25" r="20" fill="none" stroke-width="4"></circle>
+            <circle class="acpe-splash-spinner-head" cx="25" cy="25" r="20" fill="none" stroke-width="4"></circle>
+          </svg>
+        </div>
+        <div id="acpe-splash-status" class="acpe-splash-status">Connexion au Trésor Public et chargement des barèmes 2026...</div>
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         0.1 PAGE DE CONNEXION (ACPE Authentification & Contrôle d'accès)
+         ==================================================================== -->
+    <div id="acpe-login-overlay" class="acpe-auth-overlay hidden" role="dialog" aria-modal="true" aria-label="Connexion à l'application de paie ACPE">
+      <div class="acpe-auth-card">
+        <div class="acpe-auth-header">
+          <div class="acpe-auth-logo-wrap">
+            <img src="/acpe-logo%20ACPE.png" alt="Logo Officiel ACPE" />
+          </div>
+          <h2 class="acpe-auth-title">Portail ACPE • Espaces Métiers</h2>
+          <p class="acpe-auth-desc">L'espace se scinde dès la connexion selon votre rôle et vous oriente vers votre tableau de bord dédié</p>
+        </div>
+
+        <div id="acpe-login-error" class="acpe-auth-error" role="alert" style="display: none;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span id="acpe-login-error-text">Identifiant ou mot de passe incorrect.</span>
+        </div>
+
+        <!-- 1. SÉLECTION DIRECTE DE L'ESPACE MÉTIER (SCISSION À LA CONNEXION) -->
+        <div class="acpe-auth-portals-section">
+          <div class="acpe-auth-portals-title">
+            <span>1. Choisissez votre Espace Métier</span>
+            <span style="font-size: 11px; color: #1775B9; font-weight: 600;">Accès direct 1-clic</span>
+          </div>
+
+          <div class="acpe-auth-portals-grid">
+            <!-- PORTAIL 1 : DIRECTION RH (GRH) -->
+            <div class="acpe-auth-portal-card portal-grh" data-portal-espace="grh" data-portal-user="ACPE-002" role="button" tabindex="0" title="Se connecter en tant que DRH">
+              <span class="portal-badge">[ GRH ]</span>
+              <div class="portal-role-title">Ressources Humaines</div>
+              <div class="portal-user-name">Clarisse NGOMA • DRH</div>
+              <div class="portal-scope">Effectifs (485), contrats, variables, alertes RH</div>
+              <button type="button" class="portal-action-btn" data-direct-login="grh">
+                <span>Dashboard GRH</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </button>
+            </div>
+
+            <!-- PORTAIL 2 : GESTIONNAIRE DE PAIE -->
+            <div class="acpe-auth-portal-card portal-paie" data-portal-espace="paie" data-portal-user="ACPE-001" role="button" tabindex="0" title="Se connecter en tant que Gestionnaire Paie">
+              <span class="portal-badge">[ PAIE ]</span>
+              <div class="portal-role-title">Gestionnaire Paie</div>
+              <div class="portal-user-name">Steve MOUKOKO • Chef Paie</div>
+              <div class="portal-scope">Calcul indiciaire, bulletins, cotisations, virement</div>
+              <button type="button" class="portal-action-btn" data-direct-login="paie">
+                <span>Dashboard Paie</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </button>
+            </div>
+
+            <!-- PORTAIL 3 : SERVICE FINANCIER & TRÉSORERIE -->
+            <div class="acpe-auth-portal-card portal-finance" data-portal-espace="finance" data-portal-user="ACPE-003" role="button" tabindex="0" title="Se connecter en tant que Contrôleur Financier">
+              <span class="portal-badge">[ FINANCE ]</span>
+              <div class="portal-role-title">Service Financier</div>
+              <div class="portal-user-name">Alain BILONGO • Contrôleur</div>
+              <div class="portal-scope">Télé-transmission CEMAC, Trésor, justificatifs</div>
+              <button type="button" class="portal-action-btn" data-direct-login="finance">
+                <span>Dashboard Finance</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="acpe-auth-divider">
+          <span>Ou authentification par matricule</span>
+        </div>
+
+        <!-- 2. FORMULAIRE DE SAISIE PAR MATRICULE AVEC DÉTECTION DYNAMIQUE -->
+        <form id="acpe-login-form" class="acpe-auth-form">
+          <div class="acpe-auth-field">
+            <label for="login-username" class="acpe-auth-label">Identifiant ou Matricule EPA</label>
+            <div class="acpe-auth-input-wrap">
+              <svg class="acpe-auth-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              <input type="text" id="login-username" class="acpe-auth-input" placeholder="Ex: ACPE-001, ACPE-002, ACPE-003" required value="ACPE-001" autocomplete="username" />
+            </div>
+          </div>
+
+          <!-- Indicateur visuel de détection automatique de rôle et d'orientation -->
+          <div id="auth-role-detector" class="acpe-auth-role-detect detect-paie">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+            <span id="auth-role-detect-text">Rôle : <strong>Chef de Service Paie</strong> ➔ Orientation : <strong>Dashboard Paie</strong></span>
+          </div>
+
+          <div class="acpe-auth-field">
+            <label for="login-password" class="acpe-auth-label">Mot de passe de session</label>
+            <div class="acpe-auth-input-wrap">
+              <svg class="acpe-auth-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+              <input type="password" id="login-password" class="acpe-auth-input" placeholder="••••••••" required value="acpe2026" autocomplete="current-password" />
+              <button type="button" id="toggle-pwd-btn" class="acpe-auth-pwd-toggle" aria-label="Afficher ou masquer le mot de passe">
+                <svg id="toggle-pwd-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="acpe-auth-submit-btn" id="login-submit-btn">
+            <span id="login-submit-label">Se connecter au Dashboard Paie</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
+
+          <div class="acpe-auth-footer-notice">
+            Session sécurisée Trésor Public • Référence EPA-CONGO v2026.1 • Redirection automatique par rôle
+          </div>
+        </form>
+      </div>
+    </div>
+
     <div class="app-container">
       <!-- ====================================================================
            1. SIDEBAR DE NAVIGATION (260px fixe, fond #FFFFFF, hairline #1775B9)
@@ -39,6 +182,12 @@
               <span class="brand-subtitle">Établissement Public Administratif</span>
             </div>
           </div>
+          <button id="sidebar-collapse-btn" class="sidebar-collapse-btn" aria-label="Réduire en barre d'icônes" title="Réduire en barre d'icônes (Ctrl+B)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="11 17 6 12 11 7"></polyline>
+              <polyline points="18 17 13 12 18 7"></polyline>
+            </svg>
+          </button>
           <button id="sidebar-close-btn" class="sidebar-close-btn" aria-label="Fermer le menu latéral">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -47,10 +196,20 @@
           </button>
         </div>
 
-        <nav class="sidebar-nav">
-          <span class="nav-category">Pilotage & Cycle</span>
+        <!-- CARTE ESPACE ACTIF DANS LA SIDEBAR -->
+        <div class="sidebar-espace-card espace-paie" id="sidebar-espace-card">
+          <div class="sidebar-espace-title">ESPACE ACTIF</div>
+          <div class="sidebar-espace-name" id="sidebar-espace-name">
+            <span class="espace-dot dot-paie" id="sidebar-espace-dot"></span>
+            <span id="sidebar-espace-label">Gestionnaire de Paie</span>
+          </div>
+          <div class="sidebar-espace-role" id="sidebar-espace-user">MOUKOKO Steve (Chef de Service Paie)</div>
+        </div>
 
-          <a href="#" class="nav-link active" aria-current="page" id="nav-dashboard">
+        <nav class="sidebar-nav" id="sidebar-nav">
+          <span class="nav-category" id="nav-category-pilotage">Pilotage & Cycle</span>
+
+          <a href="#dashboard" class="nav-link active" aria-current="page" id="nav-dashboard" data-tooltip="Tableau de bord" data-espace="all">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="3" y="3" width="7" height="9"></rect>
               <rect x="14" y="3" width="7" height="5"></rect>
@@ -60,7 +219,29 @@
             <span>Tableau de bord</span>
           </a>
 
-          <a href="#payslips" class="nav-link" id="nav-payslips">
+          <!-- LIEN DIRECT FLUX INTER-SERVICES (GRH ➔ PAIE ➔ FINANCE) -->
+          <a href="#flux" class="nav-link" id="nav-flux" data-tooltip="Flux Inter-Services : GRH ➔ Paie ➔ Finance" data-espace="all">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+            <span style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+              <span>Flux Inter-Services</span>
+              <span class="acpe-badge" style="background-color: #059669; font-size: 9.5px; padding: 1px 6px;">Pipeline</span>
+            </span>
+          </a>
+
+          <a href="#paie" class="nav-link" id="nav-paie" data-tooltip="Calcul & Gestion de la paie" data-espace="paie,all">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="4" y="2" width="16" height="20" rx="2"></rect>
+              <line x1="8" y1="6" x2="16" y2="6"></line>
+              <line x1="8" y1="10" x2="16" y2="10"></line>
+              <line x1="8" y1="14" x2="16" y2="14"></line>
+              <line x1="8" y1="18" x2="16" y2="18"></line>
+            </svg>
+            <span>Paie & Calcul</span>
+          </a>
+
+          <a href="#payslips" class="nav-link" id="nav-payslips" data-tooltip="Bulletins de paie" data-espace="paie,all">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
               <polyline points="14 2 14 8 20 8"></polyline>
@@ -71,7 +252,7 @@
             <span>Bulletins de paie</span>
           </a>
 
-          <a href="#variables" class="nav-link" id="nav-variables">
+          <a href="#variables" class="nav-link" id="nav-variables" data-tooltip="Éléments variables" data-espace="grh,paie,all">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="3"></circle>
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -79,9 +260,30 @@
             <span>Éléments variables</span>
           </a>
 
-          <span class="nav-category" style="margin-top: 10px;">Personnel & Structures</span>
+          <!-- LIENS SPÉCIFIQUES SERVICE FINANCIER -->
+          <a href="#virements-finance" class="nav-link" id="nav-virements-finance" data-tooltip="Fichiers de Virement Bancaire (CEMAC/Trésor)" data-espace="finance,paie,all">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+              <line x1="1" y1="10" x2="23" y2="10"></line>
+            </svg>
+            <span style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+              <span>Fichiers de Virement</span>
+              <span class="acpe-badge" style="background-color: #059669; font-size: 9.5px; padding: 1px 5px;">CEMAC</span>
+            </span>
+          </a>
 
-          <a href="#employees" class="nav-link" id="nav-employees">
+          <a href="#justificatifs-comptables" class="nav-link" id="nav-justificatifs-comptables" data-tooltip="Justificatifs Comptables & Mandatement" data-espace="finance,paie,all">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <path d="M9 15l2 2 4-4"></path>
+            </svg>
+            <span>Justificatifs Comptables</span>
+          </a>
+
+          <span class="nav-category" id="nav-category-rh" style="margin-top: 10px;">Personnel & Structures (GRH)</span>
+
+          <a href="#employees" class="nav-link" id="nav-employees" data-tooltip="Employés & Registre" data-espace="grh,all">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
               <circle cx="9" cy="7" r="4"></circle>
@@ -91,7 +293,7 @@
             <span>Employés</span>
           </a>
 
-          <a href="#departments" class="nav-link" id="nav-departments">
+          <a href="#departments" class="nav-link" id="nav-departments" data-tooltip="Départements" data-espace="grh,all">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
               <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
@@ -99,7 +301,7 @@
             <span>Départements</span>
           </a>
 
-          <a href="#contracts" class="nav-link" id="nav-contracts">
+          <a href="#contracts" class="nav-link" id="nav-contracts" data-tooltip="Contrats de travail" data-espace="grh,all">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
               <polyline points="14 2 14 8 20 8"></polyline>
@@ -109,7 +311,7 @@
             <span>Contrats</span>
           </a>
 
-          <a href="#requests" class="nav-link" id="nav-requests">
+          <a href="#requests" class="nav-link" id="nav-requests" data-tooltip="Demandes en attente (3)" data-espace="grh,all">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
             </svg>
@@ -117,11 +319,12 @@
               <span>Demandes</span>
               <span class="acpe-badge-pill acpe-badge" id="sidebar-requests-badge" style="background-color: #F59E0B; font-size: 10px;">3</span>
             </span>
+            <span class="sidebar-mini-badge" aria-hidden="true">3</span>
           </a>
 
-          <span class="nav-category" style="margin-top: 10px;">Comptabilité & Traçabilité</span>
+          <span class="nav-category" id="nav-category-finance" style="margin-top: 10px;">Comptabilité & Trésorerie (Finance)</span>
 
-          <a href="#cotisations" class="nav-link" id="nav-cotisations">
+          <a href="#cotisations" class="nav-link" id="nav-cotisations" data-tooltip="Cotisations & Organismes" data-espace="finance,paie,all">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
               <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path>
@@ -131,7 +334,7 @@
             <span>Cotisations & organismes</span>
           </a>
 
-          <a href="#reports" class="nav-link" id="nav-reports">
+          <a href="#reports" class="nav-link" id="nav-reports" data-tooltip="Rapports & DSN">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="18" y1="20" x2="18" y2="10"></line>
               <line x1="12" y1="20" x2="12" y2="4"></line>
@@ -140,7 +343,7 @@
             <span>Rapports & DSN</span>
           </a>
 
-          <a href="#history" class="nav-link" id="nav-history">
+          <a href="#history" class="nav-link" id="nav-history" data-tooltip="Historique & Audit">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
               <polyline points="12 6 12 12 16 14"></polyline>
@@ -148,17 +351,27 @@
             <span>Historique & Audit</span>
           </a>
 
-          <a href="#settings" class="nav-link" id="nav-settings">
+          <a href="#settings" class="nav-link" id="nav-settings" data-tooltip="Paramètres du système">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
               <circle cx="12" cy="12" r="3"></circle>
             </svg>
             <span>Paramètres</span>
           </a>
+
+          <!-- Option Déconnexion dans la barre latérale -->
+          <button type="button" class="sidebar-logout-btn" id="sidebar-logout-btn" data-tooltip="Fermer la session" title="Fermer la session en cours">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            <span>Se déconnecter</span>
+          </button>
         </nav>
 
         <div class="sidebar-footer">
-          <div class="system-status-box">
+          <div class="system-status-box" data-tooltip="Trésor Public : Connecté (DSN 2026.1)">
             <div class="status-indicator" aria-hidden="true"></div>
             <div class="status-info">
               <span class="status-title">Connecté au Trésor</span>
@@ -175,11 +388,10 @@
         <!-- 2. HEADER -->
         <header class="header">
           <div class="header-left">
-            <button id="burger-btn" class="burger-btn" aria-label="Ouvrir le menu latéral">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="3" y1="12" x2="21" y2="12"></line>
-                <line x1="3" y1="6" x2="21" y2="6"></line>
-                <line x1="3" y1="18" x2="21" y2="18"></line>
+            <button id="burger-btn" class="burger-btn" aria-label="Afficher ou masquer le menu latéral" title="Masquer le menu pour agrandir l'espace (Ctrl+B)">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="9" y1="3" x2="9" y2="21"></line>
               </svg>
             </button>
             <img src="/acpe-logo%20ACPE.png" alt="Logo ACPE" class="header-mobile-logo" />
@@ -187,6 +399,46 @@
               <h1 id="page-main-heading">Tableau de bord</h1>
               <span class="header-subtitle">Gestion de la paie et des déclarations administratives en FCFA</span>
             </div>
+          </div>
+
+          <!-- ESPACES MÉTIERS : GRH, PAIE, FINANCE & BOUTON FLUX INTER-SERVICES -->
+          <div class="header-espaces-bar" id="header-espaces-bar">
+            <div class="espaces-switcher" id="espaces-switcher" role="tablist" aria-label="Espaces Métiers ACPE">
+              <button type="button" class="espace-btn" id="btn-espace-grh" data-espace="grh" role="tab" aria-selected="false" title="Espace Direction des Ressources Humaines (Variables & Contrats)">
+                <span class="espace-icon">👥</span>
+                <div>
+                  <span class="espace-title">GRH</span>
+                  <span class="espace-tag">Variables & Contrats</span>
+                </div>
+                <span class="espace-badge-alert" id="badge-grh-count" title="1 Alerte RH en attente de traitement">1</span>
+              </button>
+
+              <button type="button" class="espace-btn active" id="btn-espace-paie" data-espace="paie" role="tab" aria-selected="true" title="Espace Gestionnaire de Paie (Calcul & Bulletins)">
+                <span class="espace-icon">💼</span>
+                <div>
+                  <span class="espace-title">PAIE</span>
+                  <span class="espace-tag">Gestionnaire Paie</span>
+                </div>
+                <span class="espace-badge-dot" id="badge-paie-dot" title="Espace de calcul actif"></span>
+              </button>
+
+              <button type="button" class="espace-btn" id="btn-espace-finance" data-espace="finance" role="tab" aria-selected="false" title="Espace Service Financier (Virements bancaires & Justificatifs comptables)">
+                <span class="espace-icon">🏦</span>
+                <div>
+                  <span class="espace-title">FINANCE</span>
+                  <span class="espace-tag">Virements & Compta</span>
+                </div>
+                <span class="espace-badge-alert badge-green" id="badge-finance-count" title="Fichier de virement prêt pour ordonnancement">Prêt</span>
+              </button>
+            </div>
+
+            <button type="button" class="btn-flux-pipeline" id="btn-open-flux" title="Ouvrir le suivi du Flux Inter-Services [GRH] ➔ [PAIE] ➔ [FINANCE]">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+              </svg>
+              <span>Flux Inter-Services</span>
+              <span class="pipeline-pulse-dot" aria-hidden="true"></span>
+            </button>
           </div>
 
           <div class="header-right">
@@ -209,12 +461,42 @@
               <span class="notif-badge" id="notif-badge-count">4</span>
             </button>
 
-            <!-- Utilisateur connecté (gestionnaire paie) -->
-            <div class="user-profile" id="user-profile-widget">
-              <div class="user-avatar" aria-hidden="true">VL</div>
-              <div class="user-meta">
-                <span class="user-name">Valérie Laurent</span>
-                <span class="user-role">Gestionnaire Paie EPA</span>
+            <!-- Utilisateur connecté (avec menu déroulant et déconnexion) -->
+            <div class="user-profile-dropdown-wrap" id="user-profile-container">
+              <button type="button" class="user-profile" id="user-profile-btn" aria-haspopup="true" aria-expanded="false" title="Menu utilisateur et déconnexion">
+                <div class="user-avatar" id="header-user-avatar" aria-hidden="true">SM</div>
+                <div class="user-meta">
+                  <span class="user-name" id="header-user-name">MOUKOKO Steve</span>
+                  <span class="user-role" id="header-user-role">Chef de Service Paie</span>
+                </div>
+                <svg class="user-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+
+              <div class="user-dropdown-menu" id="user-dropdown-menu" role="menu">
+                <div class="user-dropdown-header">
+                  <div class="user-dropdown-name" id="dropdown-user-name">MOUKOKO Steve</div>
+                  <div class="user-dropdown-role" id="dropdown-user-role">Chef de Service Paie</div>
+                  <div class="user-dropdown-dept">Direction des Ressources Humaines • ACPE</div>
+                </div>
+                <div class="user-dropdown-divider"></div>
+                <button type="button" class="user-dropdown-item" id="btn-profile-settings">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                  </svg>
+                  <span>Paramètres du compte</span>
+                </button>
+                <div class="user-dropdown-divider"></div>
+                <button type="button" class="user-dropdown-item text-danger" id="header-logout-btn">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                  </svg>
+                  <span>Se déconnecter</span>
+                </button>
               </div>
             </div>
           </div>
@@ -226,8 +508,32 @@
                VUE 1 : TABLEAU DE BORD (DASHBOARD)
                ==================================================================== -->
           <div id="view-dashboard" class="page-view active">
-            <!-- 3. BANDEAU DE STATUT DU CYCLE DE PAIE (NAVY #00284E) -->
-            <section class="cycle-banner" aria-labelledby="cycle-banner-title">
+            <!-- BANNIÈRE 1 : ESPACE GRH (Direction des Ressources Humaines) -->
+            <section id="dash-banner-grh" class="dash-banner-role dash-banner-grh" style="display: none;" aria-label="Bandeau Espace GRH">
+              <div class="dash-banner-title-wrap">
+                <h2>
+                  <span style="font-size: 22px;">👥</span>
+                  <span>Direction des Ressources Humaines • Pilotage Effectifs & Carrières</span>
+                </h2>
+                <p>Bienvenue Clarisse NGOMA. Vous pilotez 485 agents publics EPA, la passation des variables de paie et la résolution des alertes RH.</p>
+                <div class="dash-banner-badges">
+                  <span class="dash-banner-pill">✓ Lot variables & contrats : Transmis à la Paie</span>
+                  <span class="dash-banner-pill" style="background: rgba(234, 88, 12, 0.35); border-color: #FDBA74;">⚠️ 2 Alertes RH à régulariser</span>
+                  <span class="dash-banner-pill">8 Avancements d'échelon validés</span>
+                </div>
+              </div>
+              <div class="dash-banner-actions">
+                <button type="button" class="btn-white" data-action="goto-employees" style="font-size: 13px; padding: 8px 14px;">
+                  <span>Annuaire des Agents</span>
+                </button>
+                <button type="button" class="btn-white" data-action="goto-variables" style="font-size: 13px; padding: 8px 14px; background: #ECFDF5; color: #065F46;">
+                  <span>Saisir Variables & Primes</span>
+                </button>
+              </div>
+            </section>
+
+            <!-- BANNIÈRE 2 : ESPACE PAIE (Chef de Service Paie) -->
+            <section id="dash-banner-paie" class="cycle-banner" aria-labelledby="cycle-banner-title">
               <div class="cycle-info">
                 <div class="cycle-header-row">
                   <h2 id="cycle-banner-title" class="cycle-title">Paie de Septembre 2026</h2>
@@ -289,10 +595,75 @@
                 <button 
                   id="cycle-cta-btn" 
                   class="btn-white" 
-                  data-action="calculate"
+                  data-action="goto-paie"
+                  title="Accéder à l'espace complet de calcul et validation de la paie"
                 >
-                  Lancer le calcul de paie
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+                    <rect x="4" y="2" width="16" height="20" rx="2"></rect>
+                    <line x1="8" y1="6" x2="16" y2="6"></line>
+                    <line x1="8" y1="10" x2="16" y2="10"></line>
+                    <line x1="8" y1="14" x2="16" y2="14"></line>
+                    <line x1="8" y1="18" x2="16" y2="18"></line>
+                  </svg>
+                  <span>Accéder à l'Espace Paie</span>
                 </button>
+              </div>
+            </section>
+
+            <!-- BANNIÈRE 3 : ESPACE FINANCE (Service Financier & Trésorerie) -->
+            <section id="dash-banner-finance" class="dash-banner-role dash-banner-finance" style="display: none;" aria-label="Bandeau Espace Finance">
+              <div class="dash-banner-title-wrap">
+                <h2>
+                  <span style="font-size: 22px;">🏦</span>
+                  <span>Service Financier & Trésorerie • Mandatement & Rapprochement CEMAC</span>
+                </h2>
+                <p>Bienvenue Alain BILONGO. Vous assurez la télé-transmission bancaire des salaires (142 580 400 FCFA), l'ordonnancement auprès du Trésor et les écritures comptables.</p>
+                <div class="dash-banner-badges">
+                  <span class="dash-banner-pill">482 Ordres de virement bancaire prêts</span>
+                  <span class="dash-banner-pill">Bordereau Trésor Réf. DGCP/2026/084</span>
+                  <span class="dash-banner-pill">Fichier ACPE_VIREMENT_2026-09.DAT généré</span>
+                </div>
+              </div>
+              <div class="dash-banner-actions">
+                <button type="button" class="btn-white" data-action="goto-virements" style="font-size: 13px; padding: 8px 14px;">
+                  <span>Télé-transmission Bancaire</span>
+                </button>
+                <button type="button" class="btn-white" data-action="goto-justificatifs" style="font-size: 13px; padding: 8px 14px; background: #F5F3FF; color: #5B21B6;">
+                  <span>Bordereaux de Mandatement</span>
+                </button>
+              </div>
+            </section>
+
+            <!-- COCKPIT DU FLUX INTER-SERVICES : [ GRH ] ──(1)──> [ PAIE ] ──(2)──> [ FINANCE ] -->
+            <section class="workflow-pipeline-card" id="dashboard-workflow-card" aria-labelledby="workflow-title-dash">
+              <div class="workflow-card-header">
+                <div class="workflow-card-title-wrap">
+                  <span class="workflow-card-badge">Passation & Coordination Inter-Services</span>
+                  <div>
+                    <h3 class="workflow-card-title" id="workflow-title-dash">Flux Opérationnel de Paie • Septembre 2026</h3>
+                    <p class="workflow-card-desc">Suivi en direct des échanges entre la DRH, le Gestionnaire de Paie et le Service Financier</p>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <button type="button" class="btn-secondary" id="btn-goto-full-flux" style="font-size: 12.5px; padding: 6px 12px; gap: 6px;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                    <span>Ouvrir le Centre de Flux</span>
+                  </button>
+                  <button type="button" class="btn-primary" id="btn-trigger-quick-alert" style="font-size: 12.5px; padding: 6px 12px; gap: 6px; background: #EA580C; border-color: #C2410C;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <span>Alerte RH</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- DIAGRAMME VISUEL INTERACTIF DU FLUX -->
+              <div class="workflow-diagram-container" id="workflow-diagram-dash">
+                <!-- Rempli par le moteur JS -->
+              </div>
+
+              <!-- 4 BLOCS D'ACTIONS OPÉRATIONNELLES -->
+              <div class="workflow-actions-grid" id="workflow-steps-dash">
+                <!-- Rempli par le moteur JS selon l'espace actif -->
               </div>
             </section>
 
@@ -390,6 +761,132 @@
             </article>
           </section>
 
+          <!-- ====================================================================
+               SECTIONS DASHBOARDS SCINDÉES SELON LE RÔLE DE L'UTILISATEUR
+               ==================================================================== -->
+
+          <!-- SECTION 1 : DASHBOARD DÉDIÉ ESPACE GRH (Direction RH) -->
+          <div id="dash-section-grh" class="dashboard-role-section" style="display: none;">
+            <div class="content-columns" style="margin-bottom: 24px;">
+              <!-- 1. ALERTES RH EN ATTENTE DE RÉGULARISATION -->
+              <section class="acpe-card table-card" style="flex: 1.6;" aria-labelledby="grh-alerts-title">
+                <div class="table-toolbar">
+                  <div>
+                    <h2 id="grh-alerts-title" style="display: flex; align-items: center; gap: 8px;">
+                      <span>⚠️ Alertes RH & Contrats en Attente de Traitement</span>
+                      <span class="acpe-badge acpe-badge-orange" id="badge-grh-alerts-count">2 alertes actives</span>
+                    </h2>
+                    <span style="font-size: 13px; color: var(--color-text-muted);">Alertes émises par la Paie ou la Finance nécessitant l'intervention immédiate de la DRH</span>
+                  </div>
+                  <button type="button" class="btn-secondary" id="btn-refresh-grh-alerts" style="font-size: 12px; padding: 5px 10px;">
+                    <span>Actualiser</span>
+                  </button>
+                </div>
+
+                <div class="table-responsive">
+                  <table class="acpe-table" aria-label="Liste des alertes RH">
+                    <thead>
+                      <tr>
+                        <th>Agent Concerné</th>
+                        <th>Motif de l'Alerte</th>
+                        <th>Service Émetteur</th>
+                        <th>Gravité</th>
+                        <th style="text-align: right;">Action Régularisation</th>
+                      </tr>
+                    </thead>
+                    <tbody id="dash-grh-alerts-tbody">
+                      <tr>
+                        <td>
+                          <strong>BENALI Sophie</strong><br>
+                          <span style="font-size: 11px; color: #64748B;">Mat. ACPE-0042 • Juriste EPA</span>
+                        </td>
+                        <td>
+                          <strong style="color: #EA580C;">Échéance de contrat CDD</strong><br>
+                          <span style="font-size: 11.5px; color: #475569;">Terme contractuel au 30/09/2026 • Absence d'avenant</span>
+                        </td>
+                        <td><span class="acpe-badge acpe-badge-blue">Gestionnaire Paie</span></td>
+                        <td><span class="acpe-badge acpe-badge-red">Bloquant</span></td>
+                        <td style="text-align: right;">
+                          <button type="button" class="btn-primary btn-resolve-alert-dash" data-alert-id="ALT-2026-01" data-agent="BENALI Sophie" style="font-size: 11.5px; padding: 5px 10px; background: #10B981; border-color: #059669;">
+                            <span>Régulariser Avenant</span>
+                          </button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <strong>DELORME Thomas</strong><br>
+                          <span style="font-size: 11px; color: #64748B;">Mat. ACPE-0018 • Auditeur Interne</span>
+                        </td>
+                        <td>
+                          <strong style="color: #EA580C;">Rejet RIB Banque BCI</strong><br>
+                          <span style="font-size: 11.5px; color: #475569;">Coordonnées bancaires erronées pour virement de salaire</span>
+                        </td>
+                        <td><span class="acpe-badge acpe-badge-purple">Service Finance</span></td>
+                        <td><span class="acpe-badge acpe-badge-orange">Prioritaire</span></td>
+                        <td style="text-align: right;">
+                          <button type="button" class="btn-primary btn-resolve-alert-dash" data-alert-id="ALT-2026-02" data-agent="DELORME Thomas" style="font-size: 11.5px; padding: 5px 10px; background: #10B981; border-color: #059669;">
+                            <span>Valider Nouveau RIB</span>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+
+              <!-- 2. ACTIONS RAPIDES & CALENDRIER DRH -->
+              <aside class="sidebar-panel" style="flex: 1;" aria-label="Raccourcis DRH">
+                <article class="acpe-card">
+                  <h2>Raccourcis Espace GRH</h2>
+                  <div class="quick-actions-list">
+                    <button class="quick-action-item" data-action="goto-employees">
+                      <div class="quick-action-icon" style="color: #10B981; background: #ECFDF5;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+                      </div>
+                      <span>Recruter / Ajouter un agent</span>
+                    </button>
+                    <button class="quick-action-item" data-action="goto-variables">
+                      <div class="quick-action-icon" style="color: #10B981; background: #ECFDF5;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line></svg>
+                      </div>
+                      <span>Saisie des Heures & Primes du mois</span>
+                    </button>
+                    <button class="quick-action-item" id="btn-grh-send-paie">
+                      <div class="quick-action-icon" style="color: #2563EB; background: #EFF6FF;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                      </div>
+                      <span>Transmettre variables au Gestionnaire Paie</span>
+                    </button>
+                  </div>
+                </article>
+
+                <article class="acpe-card" style="margin-top: 16px;">
+                  <h2>Synthèse Effectifs DRH</h2>
+                  <div style="font-size: 13px; color: #475569; display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #F1F5F9; padding-bottom: 6px;">
+                      <span>Cadres de Direction (Catégorie A)</span>
+                      <strong>112 agents</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #F1F5F9; padding-bottom: 6px;">
+                      <span>Maîtrise & Experts (Catégorie B)</span>
+                      <strong>198 agents</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #F1F5F9; padding-bottom: 6px;">
+                      <span>Personnel d'Exécution (Catégorie C)</span>
+                      <strong>175 agents</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-weight: 700; color: #065F46;">
+                      <span>Total Rémunéré Actif</span>
+                      <span>485 agents</span>
+                    </div>
+                  </div>
+                </article>
+              </aside>
+            </div>
+          </div>
+
+          <!-- SECTION 2 : DASHBOARD DÉDIÉ ESPACE PAIE (Gestionnaire de Paie) -->
+          <div id="dash-section-paie" class="dashboard-role-section active">
           <!-- ====================================================================
                5. SECTION ANALYTIQUE & GRAPHIQUES (Évolution 12 mois + Répartition)
                ==================================================================== -->
@@ -591,6 +1088,952 @@
                 </div>
               </article>
             </aside>
+          </div>
+        </div>
+        <!-- FIN SECTION 2 : PAIE -->
+
+        <!-- SECTION 3 : DASHBOARD DÉDIÉ ESPACE FINANCE (Service Financier & Trésor) -->
+        <div id="dash-section-finance" class="dashboard-role-section" style="display: none;">
+          <div class="content-columns">
+            <!-- 1. VENTILATION DES VIREMENTS BANCAIRES CEMAC -->
+            <section class="acpe-card table-card" style="flex: 1.6;" aria-labelledby="finance-virements-title">
+              <div class="table-toolbar">
+                <div>
+                  <h2 id="finance-virements-title" style="display: flex; align-items: center; gap: 8px;">
+                    <span>🏛️ Répartition des Ordres de Virement par Banque CEMAC</span>
+                    <span class="acpe-badge acpe-badge-purple">142 580 400 FCFA</span>
+                  </h2>
+                  <span style="font-size: 13px; color: var(--color-text-muted);">Transmission magnétique Trésor Public & Banques commerciales agréées BEAC</span>
+                </div>
+                <button type="button" class="btn-primary" id="btn-export-all-virements-dash" style="font-size: 12px; padding: 6px 12px; background: #7C3AED; border-color: #6D28D9;">
+                  <span>Télécharger Fichier .DAT Global</span>
+                </button>
+              </div>
+
+              <div class="table-responsive">
+                <table class="acpe-table" aria-label="Répartition par banque des salaires">
+                  <thead>
+                    <tr>
+                      <th>Établissement Bancaire</th>
+                      <th>Nombre d'Ordres</th>
+                      <th>Montant Net Cumulé</th>
+                      <th>Statut Transmission</th>
+                      <th style="text-align: right;">Bordereau Bancaire</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>
+                        <strong>BGFIBank Congo</strong><br>
+                        <span style="font-size: 11px; color: #64748B;">Code Banque : 30002 • Agence Centrale Brazzaville</span>
+                      </td>
+                      <td><strong>214 agents</strong></td>
+                      <td><strong style="color: #0F172A;">68 250 000 FCFA</strong></td>
+                      <td><span class="acpe-badge acpe-badge-green">Prêt pour transmission</span></td>
+                      <td style="text-align: right;">
+                        <button type="button" class="btn-secondary btn-dl-bank-spec" data-bank="BGFIBank" style="font-size: 11px; padding: 4px 8px;">
+                          <span>Ordre BGFI.CSV</span>
+                        </button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <strong>Banque Commerciale Internationale (BCI)</strong><br>
+                        <span style="font-size: 11px; color: #64748B;">Code Banque : 30004 • Agences Pointe-Noire / Brazzaville</span>
+                      </td>
+                      <td><strong>142 agents</strong></td>
+                      <td><strong style="color: #0F172A;">41 530 400 FCFA</strong></td>
+                      <td><span class="acpe-badge acpe-badge-green">Prêt pour transmission</span></td>
+                      <td style="text-align: right;">
+                        <button type="button" class="btn-secondary btn-dl-bank-spec" data-bank="BCI" style="font-size: 11px; padding: 4px 8px;">
+                          <span>Ordre BCI.CSV</span>
+                        </button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <strong>Société Générale Congo (SGC)</strong><br>
+                        <span style="font-size: 11px; color: #64748B;">Code Banque : 30006 • Réseau National</span>
+                      </td>
+                      <td><strong>84 agents</strong></td>
+                      <td><strong style="color: #0F172A;">22 800 000 FCFA</strong></td>
+                      <td><span class="acpe-badge acpe-badge-green">Prêt pour transmission</span></td>
+                      <td style="text-align: right;">
+                        <button type="button" class="btn-secondary btn-dl-bank-spec" data-bank="SGC" style="font-size: 11px; padding: 4px 8px;">
+                          <span>Ordre SGC.CSV</span>
+                        </button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <strong>La Congolaise de Banque (LCB)</strong><br>
+                        <span style="font-size: 11px; color: #64748B;">Code Banque : 30008 • Réseau Régional</span>
+                      </td>
+                      <td><strong>42 agents</strong></td>
+                      <td><strong style="color: #0F172A;">10 000 000 FCFA</strong></td>
+                      <td><span class="acpe-badge acpe-badge-orange">1 RIB en régularisation DRH</span></td>
+                      <td style="text-align: right;">
+                        <button type="button" class="btn-secondary btn-dl-bank-spec" data-bank="LCB" style="font-size: 11px; padding: 4px 8px;">
+                          <span>Ordre LCB.CSV</span>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <!-- 2. BORDEREAUX TRÉSOR & ACTIONS RAPIDES FINANCE -->
+            <aside class="sidebar-panel" style="flex: 1;" aria-label="Raccourcis Financiers">
+              <article class="acpe-card">
+                <h2>Mandatement & Justificatifs</h2>
+                <div class="quick-actions-list">
+                  <button class="quick-action-item" data-action="goto-justificatifs">
+                    <div class="quick-action-icon" style="color: #7C3AED; background: #F5F3FF;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    </div>
+                    <span>Télécharger Bordereau Trésor (PDF)</span>
+                  </button>
+
+                  <button class="quick-action-item" data-action="goto-virements">
+                    <div class="quick-action-icon" style="color: #7C3AED; background: #F5F3FF;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                    </div>
+                    <span>Consulter les Écritures Comptables</span>
+                  </button>
+
+                  <button class="quick-action-item" id="btn-finance-signal-rh">
+                    <div class="quick-action-icon" style="color: #EA580C; background: #FFF7ED;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    </div>
+                    <span>Émettre une Alerte RIB à la DRH</span>
+                  </button>
+                </div>
+              </article>
+
+              <article class="acpe-card" style="margin-top: 16px;">
+                <h2>Contrôle de Gestion Trésor</h2>
+                <div style="font-size: 13px; color: #475569; display: flex; flex-direction: column; gap: 8px;">
+                  <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #F1F5F9; padding-bottom: 6px;">
+                    <span>Subvention État consommée</span>
+                    <strong>78.4% (T3 2026)</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #F1F5F9; padding-bottom: 6px;">
+                    <span>Frais de virement interbancaires</span>
+                    <strong>145 000 FCFA</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #F1F5F9; padding-bottom: 6px;">
+                    <span>Retenues IRPP à reverser</span>
+                    <strong>18 420 100 FCFA</strong>
+                  </div>
+                </div>
+              </article>
+            </aside>
+          </div>
+        </div>
+        <!-- FIN SECTION 3 : FINANCE -->
+        </div>
+
+        <!-- ====================================================================
+             VUE 1a-FLUX : CENTRE DU FLUX INTER-SERVICES (GRH ➔ PAIE ➔ FINANCE)
+             ==================================================================== -->
+        <div id="view-flux" class="page-view">
+          <div class="view-header-bar">
+            <div class="view-header-title-group">
+              <h2>Flux Inter-Services : GRH ➔ Paie ➔ Finance</h2>
+              <p>Pilotage centralisé des transmissions, fichiers de virement, justificatifs comptables et alertes RH</p>
+            </div>
+            <div class="view-header-actions">
+              <button type="button" id="btn-flux-refresh" class="btn-secondary" style="gap:6px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                <span>Actualiser le flux</span>
+              </button>
+              <button type="button" id="btn-flux-new-alert" class="btn-primary" style="gap:6px; background: #EA580C; border-color: #C2410C;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                <span>Déclencher une Alerte RH</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- SCHÉMA PRINCIPAL DU WORKFLOW DEMANDÉ -->
+          <div class="workflow-pipeline-card">
+            <div class="workflow-card-header">
+              <div class="workflow-card-title-wrap">
+                <span class="workflow-card-badge">Architecture du Cycle</span>
+                <div>
+                  <h3 class="workflow-card-title">Matrice d'Échange Inter-Services</h3>
+                  <p class="workflow-card-desc">Cliquer sur un nœud d'espace ou une liaison de flux pour agir ou inspecter les données</p>
+                </div>
+              </div>
+              <div id="flux-view-active-espace-tag">
+                <!-- Rempli en JS -->
+              </div>
+            </div>
+
+            <!-- Diagramme dynamique -->
+            <div class="workflow-diagram-container" id="workflow-diagram-full">
+              <!-- Rempli en JS -->
+            </div>
+
+            <!-- Détail interactif des 4 stations du flux -->
+            <div class="workflow-actions-grid" id="workflow-steps-full">
+              <!-- Rempli en JS -->
+            </div>
+          </div>
+
+          <!-- SECTION DES ALERTES RH EN COURS (Étape 4) -->
+          <div class="acpe-card" style="margin-bottom: 24px;">
+            <div class="card-header-clean" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #E2E8F0; padding-bottom: 12px; margin-bottom: 16px;">
+              <div>
+                <h3 style="font-size: 16px; font-weight: 700; color: #0F172A; margin: 0;">Boucle de Contrôle : Alertes RH Actives (Étape 4)</h3>
+                <span style="font-size: 12px; color: #64748B;">Signalements transmis par la Paie ou la Finance nécessitant une régularisation par la GRH</span>
+              </div>
+              <span class="acpe-badge" id="badge-alert-count-total" style="background: #EA580C;">2 en cours</span>
+            </div>
+
+            <div id="flux-alerts-list">
+              <!-- Rempli dynamiquement en JS -->
+            </div>
+          </div>
+
+          <!-- JOURNAL DES TRANSMISSIONS INTER-SERVICES (PISTE D'AUDIT) -->
+          <div class="acpe-card">
+            <div class="card-header-clean" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #E2E8F0; padding-bottom: 12px; margin-bottom: 16px;">
+              <div>
+                <h3 style="font-size: 16px; font-weight: 700; color: #0F172A; margin: 0;">Journal des Passations Inter-Directionnelles</h3>
+                <span style="font-size: 12px; color: #64748B;">Traçabilité horodatée avec empreintes de contrôle des échanges RH • Paie • Finance</span>
+              </div>
+              <button type="button" id="btn-export-flux-log" class="btn-secondary" style="font-size: 12px; padding: 4px 10px;">Exporter le journal (CSV)</button>
+            </div>
+
+            <div class="table-responsive">
+              <table class="acpe-table" id="flux-history-table">
+                <thead>
+                  <tr>
+                    <th>Horodatage</th>
+                    <th>Émetteur</th>
+                    <th>Destinataire</th>
+                    <th>Objet du Flux</th>
+                    <th>Volume / Réf.</th>
+                    <th>Statut</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="flux-history-tbody">
+                  <!-- Rempli en JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====================================================================
+             VUE 1c-FINANCE : FICHIERS DE VIREMENT BANCAIRE & ORDONNANCEMENT (FINANCE)
+             ==================================================================== -->
+        <div id="view-virements-finance" class="page-view">
+          <div class="view-header-bar">
+            <div class="view-header-title-group">
+              <h2>Fichiers de Virement Bancaire & Ordonnancement</h2>
+              <p>Service Financier & Trésorerie • Émission des ordres de télé-transmission et mandatement interbancaire CEMAC</p>
+            </div>
+            <div class="view-header-actions">
+              <button type="button" id="btn-download-virement-file" class="btn-primary" style="gap:6px; background: #059669; border-color: #047857;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                <span>Télécharger Fichier CEMAC (.DAT)</span>
+              </button>
+              <button type="button" id="btn-ordonnancer-finance" class="btn-primary" style="gap:6px; background: #1F4E79;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Viser & Ordonnancer</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- KPI FINANCIERS -->
+          <div class="finance-kpi-grid">
+            <div class="finance-kpi-card">
+              <div class="finance-kpi-label">Masse Nette des Salaires</div>
+              <div class="finance-kpi-value" id="fin-stat-total-net">142 580 400 FCFA</div>
+              <div class="finance-kpi-sub">482 ordres de virement</div>
+            </div>
+            <div class="finance-kpi-card">
+              <div class="finance-kpi-label">Cotisations CNSS & Retraite</div>
+              <div class="finance-kpi-value">34 850 000 FCFA</div>
+              <div class="finance-kpi-sub">Échéance : 05 Octobre 2026</div>
+            </div>
+            <div class="finance-kpi-card">
+              <div class="finance-kpi-label">Impôts & Taxes Trésor</div>
+              <div class="finance-kpi-value">6 825 600 FCFA</div>
+              <div class="finance-kpi-sub">IRPP / TUS / Centimes</div>
+            </div>
+            <div class="finance-kpi-card">
+              <div class="finance-kpi-label">Statut Ordonnancement</div>
+              <div class="finance-kpi-value" style="color: #059669; font-size: 17px;" id="fin-stat-status">Prêt pour émission</div>
+              <div class="finance-kpi-sub">Contrôle Trésorerie : Validé</div>
+            </div>
+          </div>
+
+          <!-- GRILLE DES BANQUES DE DOMICILIATION -->
+          <div class="bank-cards-grid" id="finance-bank-cards">
+            <!-- Rempli en JS -->
+          </div>
+
+          <!-- TABLEAU DES ORDRES DE VIREMENT -->
+          <div class="acpe-card">
+            <div class="card-header-clean" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #E2E8F0; padding-bottom: 12px; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+              <div>
+                <h3 style="font-size: 16px; font-weight: 700; color: #0F172A; margin: 0;">Liste des Ordres de Virement Bancaire (Septembre 2026)</h3>
+                <span style="font-size: 12px; color: #64748B;">Vérification des coordonnées IBAN/RIB et des montants nets à créditer</span>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <input type="text" id="filter-virement-agent" class="acpe-input" placeholder="Filtrer agent ou matricule..." style="padding: 6px 12px; font-size: 12px; width: 200px;" />
+                <select id="filter-virement-bank" class="acpe-select" style="padding: 6px 12px; font-size: 12px;">
+                  <option value="ALL">Toutes les banques</option>
+                  <option value="BGFI">BGFIBank Congo</option>
+                  <option value="LCB">LCB Banque</option>
+                  <option value="ECOBANK">Ecobank Congo</option>
+                  <option value="TRESOR">Trésor Public</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="acpe-table" id="table-virements-finance">
+                <thead>
+                  <tr>
+                    <th>Matricule</th>
+                    <th>Nom & Prénom de l'Agent</th>
+                    <th>Banque Domiciliataire</th>
+                    <th>Compte RIB / IBAN CEMAC</th>
+                    <th>Net à virer</th>
+                    <th>Statut Bancaire</th>
+                    <th>Visa</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-virements-finance">
+                  <!-- Rempli dynamiquement en JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====================================================================
+             VUE 1d-JUSTIFICATIFS : JUSTIFICATIFS COMPTABLES & RAPPROCHEMENT (FINANCE)
+             ==================================================================== -->
+        <div id="view-justificatifs-comptables" class="page-view">
+          <div class="view-header-bar">
+            <div class="view-header-title-group">
+              <h2>Justificatifs Comptables & Rapprochement de Paie</h2>
+              <p>Émission officielle des bordereaux de mandatement, quittances d'imputation et journaux de paie</p>
+            </div>
+            <div class="view-header-actions">
+              <button type="button" id="btn-emettre-justificatifs" class="btn-primary" style="gap:6px; background: #059669; border-color: #047857;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M9 15l2 2 4-4"></path></svg>
+                <span>Certifier & Transmettre les Justificatifs</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 4 DOCUMENTS OFFICIELS CERTIFIÉS -->
+          <div class="workflow-actions-grid" id="justificatifs-docs-grid" style="margin-top: 0; margin-bottom: 24px;">
+            <!-- Rempli en JS -->
+          </div>
+
+          <!-- ÉCRITURES COMPTABLES DE PAIE (PLAN COMPTABLE ADMINISTRATIF / OHADA) -->
+          <div class="acpe-card">
+            <div class="card-header-clean" style="border-bottom: 1px solid #E2E8F0; padding-bottom: 12px; margin-bottom: 16px;">
+              <h3 style="font-size: 16px; font-weight: 700; color: #0F172A; margin: 0;">Journal des Écritures Comptables de Paie (Classes 6 & 4)</h3>
+              <span style="font-size: 12px; color: #64748B;">Imputation au budget de l'exercice 2026 • Mandatement DGCP/ACPE/084</span>
+            </div>
+
+            <div class="table-responsive">
+              <table class="acpe-table" id="table-compta-ecritures">
+                <thead>
+                  <tr>
+                    <th>Compte</th>
+                    <th>Libellé de l'imputation</th>
+                    <th>Débit (FCFA)</th>
+                    <th>Crédit (FCFA)</th>
+                    <th>Justificatif associé</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>641100</strong></td>
+                    <td>Rémunérations principales du personnel titulaire et contractuel</td>
+                    <td style="font-weight: 700; color: #1F4E79;">165 806 000</td>
+                    <td>-</td>
+                    <td>Bordereau Récapitulatif N° 084</td>
+                  </tr>
+                  <tr>
+                    <td><strong>641300</strong></td>
+                    <td>Primes, indemnités de fonction et heures supplémentaires</td>
+                    <td style="font-weight: 700; color: #1F4E79;">18 450 000</td>
+                    <td>-</td>
+                    <td>Lot Variables RH validé</td>
+                  </tr>
+                  <tr>
+                    <td><strong>421000</strong></td>
+                    <td>Personnel - Rémunérations dues (Net à payer par virement)</td>
+                    <td>-</td>
+                    <td style="font-weight: 700; color: #059669;">142 580 400</td>
+                    <td>Ordre de virement CEMAC</td>
+                  </tr>
+                  <tr>
+                    <td><strong>431000</strong></td>
+                    <td>Sécurité Sociale (Cotisations patronales & salariales CNSS)</td>
+                    <td>-</td>
+                    <td style="font-weight: 700; color: #059669;">34 850 000</td>
+                    <td>Bordereau CNSS</td>
+                  </tr>
+                  <tr>
+                    <td><strong>442000</strong></td>
+                    <td>État - Impôts et taxes retenus sur salaires (IRPP/TUS)</td>
+                    <td>-</td>
+                    <td style="font-weight: 700; color: #059669;">6 825 600</td>
+                    <td>Quittance Recette Trésor</td>
+                  </tr>
+                  <tr style="background: #F8FAFD; font-weight: 800;">
+                    <td colspan="2"><strong>TOTAL ÉCRITURES DE PAIE (ÉQUILIBRÉ)</strong></td>
+                    <td style="color: #1F4E79; font-size: 15px;">184 256 000 FCFA</td>
+                    <td style="color: #059669; font-size: 15px;">184 256 000 FCFA</td>
+                    <td><span class="acpe-badge" style="background: #059669;">Conforme</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====================================================================
+             VUE 1b : PAIE & CALCUL DES SALAIRES (RÉFÉRENCE OFFICIELLE ACPE & VIDÉO)
+             ==================================================================== -->
+        <div id="view-paie" class="page-view">
+          <div class="view-header-bar">
+            <div class="view-header-title-group">
+              <h2>Calcul et Gestion de la Paie</h2>
+              <p>Lancer le calcul automatique des salaires, valider la période et ordonnancer les paiements en République du Congo</p>
+            </div>
+            <div class="view-header-actions">
+              <button type="button" id="btn-paie-return-dash" class="btn-secondary" style="gap:6px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+                <span>Retour au Tableau de bord</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Barre d'onglets de navigation interne de l'Espace Paie -->
+          <div class="payroll-subnav" role="tablist" aria-label="Sections Espace Paie">
+            <button type="button" class="payroll-tab-btn active" data-tab="calc-paie" role="tab" aria-selected="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="4" y="2" width="16" height="20" rx="2"></rect>
+                <line x1="8" y1="6" x2="16" y2="6"></line>
+                <line x1="8" y1="10" x2="16" y2="10"></line>
+                <line x1="8" y1="14" x2="16" y2="14"></line>
+                <line x1="8" y1="18" x2="16" y2="18"></line>
+              </svg>
+              <span>1. Calcul de la paie</span>
+            </button>
+            <button type="button" class="payroll-tab-btn" data-tab="validation-paie" role="tab" aria-selected="false">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span>2. Validation de la paie</span>
+            </button>
+            <button type="button" class="payroll-tab-btn" data-tab="paiement-congo" role="tab" aria-selected="false">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+                <line x1="2" y1="10" x2="22" y2="10"></line>
+              </svg>
+              <span>3. Formulaire de Paiement - République du Congo</span>
+            </button>
+            <button type="button" class="payroll-tab-btn" data-tab="ventilation-masse" role="tab" aria-selected="false">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="20" x2="18" y2="10"></line>
+                <line x1="12" y1="20" x2="12" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="14"></line>
+              </svg>
+              <span>4. Masse Salariale & Banques</span>
+            </button>
+          </div>
+
+          <!-- ================================================================
+               SOUS-SECTION 1 : CALCUL DE LA PAIE (SÉLECTION PÉRIODE + CALCUL)
+               ================================================================ -->
+          <div id="payroll-panel-calc" class="payroll-panel-tab active">
+            <!-- 1. Sélection de la période -->
+            <div class="payroll-card">
+              <div class="payroll-card-header">
+                <h3>Sélection de la période</h3>
+              </div>
+              <div class="payroll-period-grid">
+                <div class="form-group">
+                  <label for="payroll-sel-annee" style="font-weight: 600; font-size: 13px; color: var(--color-text-main); margin-bottom: 6px; display: block;">ANNÉE</label>
+                  <select id="payroll-sel-annee" class="acpe-select" style="width: 100%;">
+                    <option value="2024">2024</option>
+                    <option value="2025">2025</option>
+                    <option value="2026" selected>2026</option>
+                    <option value="2027">2027</option>
+                    <option value="2028">2028</option>
+                    <option value="2029">2029</option>
+                    <option value="2030">2030</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="payroll-sel-mois" style="font-weight: 600; font-size: 13px; color: var(--color-text-main); margin-bottom: 6px; display: block;">MOIS</label>
+                  <select id="payroll-sel-mois" class="acpe-select" style="width: 100%;">
+                    <option value="">-- Sélectionner --</option>
+                    <option value="01">Janvier</option>
+                    <option value="02">Février</option>
+                    <option value="03">Mars</option>
+                    <option value="04">Avril</option>
+                    <option value="05">Mai</option>
+                    <option value="06">Juin</option>
+                    <option value="07">Juillet</option>
+                    <option value="08">Août</option>
+                    <option value="09" selected>Septembre</option>
+                    <option value="10">Octobre</option>
+                    <option value="11">Novembre</option>
+                    <option value="12">Décembre</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group" style="margin-top: 12px;">
+                <label for="payroll-sel-periode" style="font-weight: 600; font-size: 13px; color: var(--color-text-main); margin-bottom: 6px; display: block;">PÉRIODE DE PAIE</label>
+                <select id="payroll-sel-periode" class="acpe-select" style="width: 100%;">
+                  <option value="Mai 2026">Mai 2026</option>
+                  <option value="Juin 2026">Juin 2026</option>
+                  <option value="Juillet 2026">Juillet 2026</option>
+                  <option value="Août 2026">Août 2026</option>
+                  <option value="Septembre 2026" selected>Septembre 2026</option>
+                  <option value="Octobre 2026">Octobre 2026</option>
+                  <option value="Novembre 2026">Novembre 2026</option>
+                  <option value="Décembre 2026">Décembre 2026</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- 2. Zone de Calcul pour la période -->
+            <div class="payroll-card">
+              <div class="payroll-card-header">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <h3>Calcul pour <span id="payroll-active-period-label">Septembre 2026</span></h3>
+                </div>
+                <span id="payroll-period-badge-status" class="acpe-badge" style="background:#ECFDF5; color:#065F46; border:1px solid #A7F3D0; font-weight:700;">OUVERTE</span>
+              </div>
+
+              <!-- Filtres type de contrat (comme dans la vidéo) -->
+              <div style="margin-bottom: 16px;">
+                <span style="font-size: 13px; font-weight: 600; color: var(--color-text-muted); display: block; margin-bottom: 8px;">Filtrer par type de contrat</span>
+                <div class="payroll-filter-group" id="payroll-contract-filters">
+                  <button type="button" class="payroll-pill active" data-contract="Tous">Tous</button>
+                  <button type="button" class="payroll-pill" data-contract="Stagiaires">Stagiaires</button>
+                  <button type="button" class="payroll-pill" data-contract="CDD">CDD</button>
+                  <button type="button" class="payroll-pill" data-contract="CDI">CDI</button>
+                  <button type="button" class="payroll-pill" data-contract="Fonctionnaires">Fonctionnaires / Titulaires</button>
+                </div>
+              </div>
+
+              <!-- Portée du calcul : Global ou Individuel par bulletin -->
+              <div style="background-color: #F8FAFD; border: 1px solid var(--color-border-light); border-radius: var(--radius-md); padding: 16px; margin: 16px 0;">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
+                  <div>
+                    <strong style="font-size: 14px; color: var(--color-text-main);">Mode d'exécution du calcul :</strong>
+                    <p style="font-size: 12px; color: var(--color-text-muted); margin-top: 2px;">Calculer la masse globale ou un bulletin individuel spécifique</p>
+                  </div>
+                  <div style="display: flex; gap: 16px;">
+                    <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                      <input type="radio" name="payroll-scope" value="global" checked id="payroll-scope-global" />
+                      <span>👥 Calcul Global (Tous les agents du filtre)</span>
+                    </label>
+                    <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                      <input type="radio" name="payroll-scope" value="individual" id="payroll-scope-individual" />
+                      <span>👤 Calcul Individuel par bulletin</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Sélecteur d'agent si calcul individuel -->
+                <div id="payroll-individual-agent-box" style="display: none; padding-top: 12px; border-top: 1px solid var(--color-border-light);">
+                  <label for="payroll-individual-agent-select" style="font-size: 13px; font-weight: 600; color: var(--color-text-main); margin-bottom: 6px; display: block;">Sélectionner l'agent à calculer individuellement :</label>
+                  <select id="payroll-individual-agent-select" class="acpe-select" style="width: 100%; max-width: 500px;">
+                    <!-- Rempli dynamiquement -->
+                  </select>
+                </div>
+              </div>
+
+              <!-- Barre de statut & compteurs -->
+              <div class="payroll-stat-bar">
+                <div class="payroll-stat-item">
+                  <span>Employés actifs :</span>
+                  <strong id="payroll-active-emp-count">48</strong>
+                </div>
+                <div class="payroll-stat-item">
+                  <span>Masse salariale calculée :</span>
+                  <strong id="payroll-active-masse-sum">18 940 000 FCFA</strong>
+                </div>
+                <div class="payroll-stat-item">
+                  <span>Statut de la période :</span>
+                  <strong id="payroll-active-period-status-text" style="color: #059669;">OUVERTE</strong>
+                </div>
+              </div>
+
+              <!-- Boutons d'action -->
+              <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 20px;">
+                <button type="button" id="btn-trigger-payroll-calc" class="btn-primary" style="display: inline-flex; align-items: center; gap: 8px;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="4" y="2" width="16" height="20" rx="2"></rect>
+                    <line x1="8" y1="6" x2="16" y2="6"></line>
+                    <line x1="8" y1="10" x2="16" y2="10"></line>
+                    <line x1="8" y1="14" x2="16" y2="14"></line>
+                    <line x1="8" y1="18" x2="16" y2="18"></line>
+                  </svg>
+                  <span id="btn-trigger-calc-text">Lancer le calcul</span>
+                </button>
+
+                <button type="button" id="btn-payroll-go-validation" class="btn-secondary" style="display: inline-flex; align-items: center; gap: 8px;">
+                  <span>Passer à la validation</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </button>
+
+                <button type="button" id="btn-payroll-go-payment" class="btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; margin-left: auto;">
+                  <span>Formulaire de Paiement Congo</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Tableau des bulletins calculés pour cette période -->
+              <div style="margin-top: 28px;">
+                <h4 style="font-size: 15px; font-weight: 700; margin-bottom: 12px; color: var(--color-text-main);">
+                  Résultats des traitements calculés (<span id="payroll-results-count">48</span> agents)
+                </h4>
+                <div class="acpe-table-responsive" style="max-height: 480px; overflow-y: auto;">
+                  <table class="acpe-table" id="payroll-calc-results-table">
+                    <thead>
+                      <tr>
+                        <th>Matricule</th>
+                        <th>Agent Public</th>
+                        <th>Direction</th>
+                        <th>Type Contrat</th>
+                        <th>Brut (FCFA)</th>
+                        <th>Retenues</th>
+                        <th>Traitement Net</th>
+                        <th>Statut Calcul</th>
+                        <th style="text-align: right;">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="payroll-calc-results-tbody">
+                      <!-- Généré dynamiquement -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ================================================================
+               SOUS-SECTION 2 : VALIDATION DE LA PAIE (VALIDER & GÉNÉRER BULLETINS)
+               ================================================================ -->
+          <div id="payroll-panel-validation" class="payroll-panel-tab" style="display: none;">
+            <div class="payroll-card">
+              <div class="payroll-card-header">
+                <div>
+                  <h3 style="font-size: 20px;">Validation de la paie</h3>
+                  <p style="font-size: 13px; color: var(--color-text-muted); margin-top: 4px;">Valider et générer les bulletins officiels de salaire pour l'ordonnancement.</p>
+                </div>
+              </div>
+
+              <!-- Sélection / Rappel période -->
+              <div style="margin-bottom: 16px; background: #F8FAFD; border: 1px solid var(--color-border-light); border-radius: var(--radius-md); padding: 16px;">
+                <label for="validation-select-period" style="font-size: 13px; font-weight: 600; color: var(--color-text-main); margin-bottom: 6px; display: block;">Période de paie</label>
+                <select id="validation-select-period" class="acpe-select" style="max-width: 320px;">
+                  <option value="Mai 2026">Mai 2026</option>
+                  <option value="Juin 2026">Juin 2026</option>
+                  <option value="Juillet 2026">Juillet 2026</option>
+                  <option value="Août 2026">Août 2026</option>
+                  <option value="Septembre 2026" selected>Septembre 2026</option>
+                  <option value="Octobre 2026">Octobre 2026</option>
+                </select>
+              </div>
+
+              <!-- Carte de validation -->
+              <div style="border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 20px; background: #FFFFFF;">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <h4 style="font-size: 16px; font-weight: 700; color: var(--color-text-main); margin: 0;">Validation pour <span id="val-period-title-display">Septembre 2026</span></h4>
+                    <span id="val-period-status-badge" class="acpe-badge" style="background:#ECFDF5; color:#065F46; border:1px solid #A7F3D0; font-weight:700;">OUVERTE</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <button type="button" id="btn-val-all-slips" class="btn-primary" style="background-color: #0F172A; color: #FFFFFF; display: inline-flex; align-items: center; gap: 6px;">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      <span>Valider tous</span>
+                    </button>
+                    <button type="button" id="btn-generate-all-payslips" class="btn-secondary" style="display: inline-flex; align-items: center; gap: 6px;">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                      </svg>
+                      <span>Générer bulletins</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="payroll-stat-bar" style="margin-top: 0; margin-bottom: 20px;">
+                  <div class="payroll-stat-item">
+                    <span>Traitements à valider :</span>
+                    <strong id="val-count-to-validate">0</strong>
+                  </div>
+                  <div class="payroll-stat-item">
+                    <span>Statut de la période :</span>
+                    <strong id="val-period-status-text" style="color: #059669;">OUVERTE</strong>
+                  </div>
+                </div>
+
+                <!-- Table de validation -->
+                <div class="acpe-table-responsive" style="max-height: 480px; overflow-y: auto;">
+                  <table class="acpe-table" id="table-validation-slips">
+                    <thead>
+                      <tr>
+                        <th style="width: 40px;"><input type="checkbox" id="check-all-val" title="Tout sélectionner" /></th>
+                        <th>Matricule</th>
+                        <th>Agent Public</th>
+                        <th>Direction</th>
+                        <th>Brut (FCFA)</th>
+                        <th>Net à Payer (FCFA)</th>
+                        <th>Statut Validation</th>
+                        <th style="text-align: right;">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tbody-validation-slips">
+                      <!-- Rendu dynamique -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ================================================================
+               SOUS-SECTION 3 : FORMULAIRE DE PAIEMENT - RÉPUBLIQUE DU CONGO
+               ================================================================ -->
+          <div id="payroll-panel-paiement" class="payroll-panel-tab" style="display: none;">
+            <div class="payroll-card">
+              <div class="payroll-card-header">
+                <div>
+                  <h3 style="font-size: 20px;">Formulaire de Paiement - République du Congo</h3>
+                  <p style="font-size: 13px; color: var(--color-text-muted); margin-top: 4px;">Règlement des salaires : Virement bancaire, remise en mains propres (espèces), Mobile Money ou carte bancaire.</p>
+                </div>
+                <span class="acpe-badge" style="background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE;">Norme Trésor Public Congo</span>
+              </div>
+
+              <form id="form-congo-payroll-payment" style="display: flex; flex-direction: column; gap: 18px;">
+                <!-- Ligne 1 : DÉPARTEMENT & VILLE / CHEF-LIEU (Complets République du Congo) -->
+                <div class="form-row-2">
+                  <div class="form-group">
+                    <label for="congo-pay-dept" style="font-weight: 600; font-size: 13px; color: var(--color-text-main); margin-bottom: 6px; display: block;">DÉPARTEMENT</label>
+                    <select id="congo-pay-dept" class="acpe-select" required style="width: 100%;">
+                      <option value="">-- Sélectionner --</option>
+                      <option value="Brazzaville">Brazzaville</option>
+                      <option value="Pointe-Noire">Pointe-Noire</option>
+                      <option value="Kouilou">Kouilou</option>
+                      <option value="Niari">Niari</option>
+                      <option value="Bouenza">Bouenza</option>
+                      <option value="Lékoumou">Lékoumou</option>
+                      <option value="Pool">Pool</option>
+                      <option value="Plateaux">Plateaux</option>
+                      <option value="Cuvette">Cuvette</option>
+                      <option value="Cuvette-Ouest">Cuvette-Ouest</option>
+                      <option value="Sangha">Sangha</option>
+                      <option value="Likouala">Likouala</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="congo-pay-ville" style="font-weight: 600; font-size: 13px; color: var(--color-text-main); margin-bottom: 6px; display: block;">VILLE / CHEF-LIEU</label>
+                    <select id="congo-pay-ville" class="acpe-select" required style="width: 100%;">
+                      <option value="">-- Sélectionner un département d'abord --</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Ligne 2 : MÉTHODE DE PAIEMENT & BANQUE / ÉTABLISSEMENT / OPÉRATEUR -->
+                <div class="form-row-2">
+                  <div class="form-group">
+                    <label for="congo-pay-methode" style="font-weight: 600; font-size: 13px; color: var(--color-text-main); margin-bottom: 6px; display: block;">MÉTHODE DE PAIEMENT</label>
+                    <select id="congo-pay-methode" class="acpe-select" required style="width: 100%;">
+                      <option value="Virement (Virement local)">Virement (Virement local)</option>
+                      <option value="Remise à la main (Espèces / Billetterie)">Remise à la main (Espèces / Billetterie Trésor)</option>
+                      <option value="Mobile Money (MTN / Airtel)">Mobile Money (MTN / Airtel)</option>
+                      <option value="Carte Bancaire (Visa / Mastercard)">Carte Bancaire (Visa / Mastercard)</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="congo-pay-banque" id="congo-pay-banque-label" style="font-weight: 600; font-size: 13px; color: var(--color-text-main); margin-bottom: 6px; display: block;">BANQUE</label>
+                    <select id="congo-pay-banque" class="acpe-select" required style="width: 100%;">
+                      <option value="">Sélectionner une banque</option>
+                      <!-- Options injectées dynamiquement selon la méthode -->
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Ligne 3 : AGENT BÉNÉFICIAIRE -->
+                <div class="form-group">
+                  <label for="congo-pay-agent" style="font-weight: 600; font-size: 13px; color: var(--color-text-main); margin-bottom: 6px; display: block;">BÉNÉFICIAIRE (AGENT PUBLIC)</label>
+                  <select id="congo-pay-agent" class="acpe-select" required style="width: 100%;">
+                    <option value="">-- Sélectionner un agent public dans le registre --</option>
+                    <!-- Injecté dynamiquement -->
+                  </select>
+                </div>
+
+                <!-- Ligne 4 : NUMÉRO DE COMPTE / TÉLÉPHONE / QUITTANCE & MONTANT (XAF) -->
+                <div class="form-row-2">
+                  <div class="form-group">
+                    <label for="congo-pay-numero" id="congo-pay-numero-label" style="font-weight: 600; font-size: 13px; color: var(--color-text-main); margin-bottom: 6px; display: block;">NUMÉRO DE COMPTE</label>
+                    <input type="text" id="congo-pay-numero" class="acpe-input" placeholder="CG012 00000 00000000000 00" required style="width: 100%;" />
+                  </div>
+                  <div class="form-group">
+                    <label for="congo-pay-montant" style="font-weight: 600; font-size: 13px; color: var(--color-text-main); margin-bottom: 6px; display: block;">MONTANT (XAF)</label>
+                    <input type="text" id="congo-pay-montant" class="acpe-input" placeholder="XAF 0.00" required style="width: 100%; font-weight: 700; color: var(--color-primary);" />
+                  </div>
+                </div>
+
+                <!-- Boutons d'action -->
+                <div style="display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 12px;">
+                  <button type="submit" id="btn-submit-congo-payment" class="btn-primary" style="padding: 12px 28px;">
+                    Effectuer le Paiement
+                  </button>
+                  <button type="button" id="btn-cancel-congo-payment" class="btn-secondary" style="padding: 12px 24px;">
+                    Annuler
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- ================================================================
+               SOUS-SECTION 4 : VENTILATION MASSE SALARIALE & FILTRES BANQUES
+               ================================================================ -->
+          <div id="payroll-panel-ventilation" class="payroll-panel-tab" style="display: none;">
+            <!-- Cartes de synthèse par canal de paiement -->
+            <div class="payment-channels-grid">
+              <div class="payment-channel-card" style="border-left: 4px solid #1D4ED8;">
+                <div class="payment-channel-top">
+                  <span style="font-size: 13px; font-weight: 600; color: var(--color-text-muted);">Virements Bancaires</span>
+                  <span class="payment-channel-badge" style="background: #EFF6FF; color: #1D4ED8;">Banques CEMAC</span>
+                </div>
+                <strong id="channel-sum-virement" style="font-size: 18px; color: var(--color-text-main);">0 FCFA</strong>
+                <span id="channel-count-virement" style="font-size: 12px; color: var(--color-text-muted);">0 agents</span>
+              </div>
+
+              <div class="payment-channel-card" style="border-left: 4px solid #F59E0B;">
+                <div class="payment-channel-top">
+                  <span style="font-size: 13px; font-weight: 600; color: var(--color-text-muted);">Mobile Money</span>
+                  <span class="payment-channel-badge" style="background: #FEF3C7; color: #D97706;">MTN / Airtel</span>
+                </div>
+                <strong id="channel-sum-momo" style="font-size: 18px; color: var(--color-text-main);">0 FCFA</strong>
+                <span id="channel-count-momo" style="font-size: 12px; color: var(--color-text-muted);">0 agents</span>
+              </div>
+
+              <div class="payment-channel-card" style="border-left: 4px solid #10B981;">
+                <div class="payment-channel-top">
+                  <span style="font-size: 13px; font-weight: 600; color: var(--color-text-muted);">Cartes Bancaires</span>
+                  <span class="payment-channel-badge" style="background: #ECFDF5; color: #059669;">Visa / MasterCard</span>
+                </div>
+                <strong id="channel-sum-carte" style="font-size: 18px; color: var(--color-text-main);">0 FCFA</strong>
+                <span id="channel-count-carte" style="font-size: 12px; color: var(--color-text-muted);">0 agents</span>
+              </div>
+
+              <div class="payment-channel-card" style="border-left: 4px solid #8B5CF6;">
+                <div class="payment-channel-top">
+                  <span style="font-size: 13px; font-weight: 600; color: var(--color-text-muted);">Remise en Mains Propres</span>
+                  <span class="payment-channel-badge" style="background: #F5F3FF; color: #7C3AED;">Billetterie / Espèces</span>
+                </div>
+                <strong id="channel-sum-especes" style="font-size: 18px; color: var(--color-text-main);">0 FCFA</strong>
+                <span id="channel-count-especes" style="font-size: 12px; color: var(--color-text-muted);">0 agents</span>
+              </div>
+            </div>
+
+            <!-- Barre de filtres interactive -->
+            <div class="payroll-card" style="padding: 18px 24px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 16px;">
+                <h3 style="font-size: 16px; font-weight: 700; margin: 0;">Ventilation & Filtres de la Masse Salariale</h3>
+                <span id="filtered-payroll-count" class="acpe-badge" style="background: #F1F5F9; color: #334155; border: 1px solid #CBD5E1;">Affichage : 0 agents</span>
+              </div>
+
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;">
+                <div>
+                  <label for="filter-channel-mode" style="font-size: 12px; font-weight: 600; color: var(--color-text-muted); display: block; margin-bottom: 4px;">Canal de paiement</label>
+                  <select id="filter-channel-mode" class="acpe-select" style="width: 100%; height: 38px; font-size: 13px;">
+                    <option value="all">Tous les canaux</option>
+                    <option value="Virement">Virement bancaire</option>
+                    <option value="Mobile Money">Mobile Money (MTN / Airtel)</option>
+                    <option value="Carte Bancaire">Carte Bancaire (Visa / Mastercard)</option>
+                    <option value="Espèces">Remise à la main (Espèces / Billetterie)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label for="filter-channel-bank" style="font-size: 12px; font-weight: 600; color: var(--color-text-muted); display: block; margin-bottom: 4px;">Banque / Opérateur / Caisse</label>
+                  <select id="filter-channel-bank" class="acpe-select" style="width: 100%; height: 38px; font-size: 13px;">
+                    <option value="all">Toutes les banques & caisses</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label for="filter-channel-dept" style="font-size: 12px; font-weight: 600; color: var(--color-text-muted); display: block; margin-bottom: 4px;">Département (Congo)</label>
+                  <select id="filter-channel-dept" class="acpe-select" style="width: 100%; height: 38px; font-size: 13px;">
+                    <option value="all">Tous les départements</option>
+                    <option value="Brazzaville">Brazzaville</option>
+                    <option value="Pointe-Noire">Pointe-Noire</option>
+                    <option value="Kouilou">Kouilou</option>
+                    <option value="Niari">Niari</option>
+                    <option value="Bouenza">Bouenza</option>
+                    <option value="Lékoumou">Lékoumou</option>
+                    <option value="Pool">Pool</option>
+                    <option value="Plateaux">Plateaux</option>
+                    <option value="Cuvette">Cuvette</option>
+                    <option value="Cuvette-Ouest">Cuvette-Ouest</option>
+                    <option value="Sangha">Sangha</option>
+                    <option value="Likouala">Likouala</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label for="filter-channel-search" style="font-size: 12px; font-weight: 600; color: var(--color-text-muted); display: block; margin-bottom: 4px;">Recherche agent</label>
+                  <input type="text" id="filter-channel-search" class="acpe-input" placeholder="Nom ou matricule..." style="width: 100%; height: 38px; font-size: 13px;" />
+                </div>
+              </div>
+
+              <!-- Tableau ventilé des salaires -->
+              <div class="acpe-table-responsive" style="margin-top: 20px; max-height: 520px; overflow-y: auto;">
+                <table class="acpe-table" id="table-channel-payments">
+                  <thead>
+                    <tr>
+                      <th>Matricule</th>
+                      <th>Agent Public</th>
+                      <th>Canal Règlement</th>
+                      <th>Établissement / Point MoMo / Caisse</th>
+                      <th>Coordonnées (Compte / Tél / Quittance)</th>
+                      <th>Localisation (Département / Ville)</th>
+                      <th>Montant Net (FCFA)</th>
+                      <th>Statut Paiement</th>
+                      <th style="text-align: right;">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbody-channel-payments">
+                    <!-- Rendu dynamique -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1666,7 +3109,7 @@
               <img src="/acpe-logo.png" alt="Logo Officiel ACPE" style="height: 38px; width: auto; object-fit: contain;" />
             </div>
             <div>
-              <h3 id="modal-title" style="margin: 0; font-size: 16px; font-weight: 700; color: #FFFFFF;">Bulletin de Paie Officiel — ACPE</h3>
+              <h3 id="modal-title" style="margin: 0; font-size: 16px; font-weight: 700; color: #FFFFFF;">Bulletin de Paie Officiel ACPE</h3>
               <span style="font-size: 12px; opacity: 0.9; color: #E2E8F0;">Établissement Public Administratif • République du Congo • Période : <span id="modal-period-text">Septembre 2026</span></span>
             </div>
           </div>
@@ -1726,7 +3169,7 @@
          MODALE D'AJOUT D'UN AGENT PUBLIC
          ==================================================================== -->
     <div id="add-agent-modal" class="modal-backdrop" aria-hidden="true" role="dialog" aria-labelledby="add-agent-title">
-      <div class="modal-card">
+      <div class="modal-card modal-card-lg">
         <div class="modal-header">
           <div>
             <h3 id="add-agent-title">Créer un Dossier Agent Public</h3>
@@ -1791,10 +3234,81 @@
     </div>
 
     <!-- ====================================================================
+         MODALE FICHE INDIVIDUELLE AGENT (ADMINISTRATION STATUTAIRE)
+         ==================================================================== -->
+    <div id="agent-detail-modal" class="modal-backdrop" aria-hidden="true" role="dialog" aria-labelledby="agent-detail-title">
+      <div class="modal-card modal-card-lg">
+        <div class="modal-header">
+          <div>
+            <h3 id="agent-detail-title">Fiche Statutaire de l'Agent Public</h3>
+            <span style="font-size: 12px; opacity: 0.85;">Dossier administratif & carrière Établissement Public Administratif</span>
+          </div>
+          <button id="close-agent-detail-btn" class="modal-close-btn" aria-label="Fermer la boîte">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
+          <div style="background: #F8FAFD; border: 1px solid var(--color-border-light); border-radius: 8px; padding: 16px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div id="agent-detail-avatar" class="agent-avatar-small" style="width: 48px; height: 48px; font-size: 17px; font-weight: 700;">AG</div>
+              <div>
+                <div id="agent-detail-nom" style="font-size: 16px; font-weight: 700; color: var(--color-text-main);">Agent Public</div>
+                <div id="agent-detail-grade" style="font-size: 13px; color: var(--color-secondary); font-weight: 500;">Grade & Emploi</div>
+              </div>
+            </div>
+            <div id="agent-detail-status-badge">
+              <span class="acpe-badge">Titulaire</span>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+            <div style="background: #FFFFFF; border: 1px solid var(--color-border-light); border-radius: 6px; padding: 10px 12px;">
+              <span style="font-size: 11px; color: var(--color-text-muted); text-transform: uppercase; font-weight: 600;">Matricule Solde</span>
+              <div id="agent-detail-matricule" style="font-size: 14px; font-weight: 700; color: var(--color-text-main); margin-top: 2px;">EPA-2024-001</div>
+            </div>
+            <div style="background: #FFFFFF; border: 1px solid var(--color-border-light); border-radius: 6px; padding: 10px 12px;">
+              <span style="font-size: 11px; color: var(--color-text-muted); text-transform: uppercase; font-weight: 600;">Direction / Service</span>
+              <div id="agent-detail-direction" style="font-size: 13px; font-weight: 600; color: var(--color-text-main); margin-top: 2px;">DAF</div>
+            </div>
+            <div style="background: #FFFFFF; border: 1px solid var(--color-border-light); border-radius: 6px; padding: 10px 12px;">
+              <span style="font-size: 11px; color: var(--color-text-muted); text-transform: uppercase; font-weight: 600;">Catégorie & Grille</span>
+              <div id="agent-detail-cat" style="font-size: 13px; font-weight: 600; color: var(--color-text-main); margin-top: 2px;">Catégorie A</div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+            <div style="background: #F1F5F9; border: 1px solid #CBD5E1; border-radius: 6px; padding: 12px;">
+              <span style="font-size: 11px; color: #475569; text-transform: uppercase; font-weight: 600;">Indice de Rémunération (INM)</span>
+              <div id="agent-detail-indice" style="font-size: 18px; font-weight: 700; color: var(--color-primary); margin-top: 2px;">620</div>
+            </div>
+            <div style="background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 6px; padding: 12px;">
+              <span style="font-size: 11px; color: #065F46; text-transform: uppercase; font-weight: 600;">Traitement Net Mensuel</span>
+              <div id="agent-detail-net" style="font-size: 18px; font-weight: 700; color: #059669; margin-top: 2px;">415 650 FCFA</div>
+            </div>
+          </div>
+
+          <div class="modal-footer" style="padding: 12px 0 0 0; margin-top: 6px; display: flex; justify-content: space-between; align-items: center;">
+            <button type="button" id="btn-close-agent-detail" class="btn-secondary">Fermer la fiche</button>
+            <button type="button" id="btn-view-agent-payslip" class="btn-primary" style="display: inline-flex; align-items: center; gap: 8px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+              </svg>
+              <span>Consulter son Bulletin Officiel</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====================================================================
          MODALE D'AJOUT D'ÉLÉMENT VARIABLE
          ==================================================================== -->
     <div id="add-variable-modal" class="modal-backdrop" aria-hidden="true" role="dialog" aria-labelledby="add-var-title">
-      <div class="modal-card">
+      <div class="modal-card modal-card-sm">
         <div class="modal-header">
           <div>
             <h3 id="add-var-title">Saisir un Élément Variable de Paie</h3>
@@ -1847,7 +3361,7 @@
          MODALE CRÉATION / MODIFICATION DÉPARTEMENT
          ==================================================================== -->
     <div id="add-dept-modal" class="modal-backdrop" aria-hidden="true" role="dialog" aria-labelledby="add-dept-title">
-      <div class="modal-card">
+      <div class="modal-card modal-card-md">
         <div class="modal-header">
           <div>
             <h3 id="add-dept-title">Nouveau Département / Structure</h3>
@@ -1911,7 +3425,7 @@
          MODALE TRANSFERT D'AGENT D'UN DÉPARTEMENT À UN AUTRE
          ==================================================================== -->
     <div id="transfer-agent-modal" class="modal-backdrop" aria-hidden="true" role="dialog" aria-labelledby="transfer-title">
-      <div class="modal-card">
+      <div class="modal-card modal-card-md">
         <div class="modal-header">
           <div>
             <h3 id="transfer-title">Rattachement / Mutation d'un Agent</h3>
@@ -1974,7 +3488,7 @@
          MODALE CRÉATION D'UN CONTRAT AGENT
          ==================================================================== -->
     <div id="add-contract-modal" class="modal-backdrop" aria-hidden="true" role="dialog" aria-labelledby="add-contract-title">
-      <div class="modal-card">
+      <div class="modal-card modal-card-contract">
         <div class="modal-header">
           <div>
             <h3 id="add-contract-title">Établir un Nouveau Contrat d'Agent</h3>
@@ -2053,7 +3567,7 @@
          MODALE DÉPÔT D'UNE DEMANDE AGENT (SELF-SERVICE)
          ==================================================================== -->
     <div id="add-request-modal" class="modal-backdrop" aria-hidden="true" role="dialog" aria-labelledby="add-req-title">
-      <div class="modal-card">
+      <div class="modal-card modal-card-md">
         <div class="modal-header">
           <div>
             <h3 id="add-req-title">Déposer une Demande Agent</h3>
@@ -2110,7 +3624,7 @@
          MODALE D'EXAMEN & DÉCISION SUR DEMANDE (WORKFLOW & TIMELINE)
          ==================================================================== -->
     <div id="request-detail-modal" class="modal-backdrop" aria-hidden="true" role="dialog" aria-labelledby="req-detail-title">
-      <div class="modal-card" style="max-width: 680px;">
+      <div class="modal-card modal-card-lg">
         <div class="modal-header">
           <div>
             <h3 id="req-detail-title">Examen de la Demande Agent</h3>
@@ -2195,7 +3709,7 @@
          MODALE DÉTAIL & INSPECTION D'UN ÉVÉNEMENT DU JOURNAL D'AUDIT
          ==================================================================== -->
     <div id="audit-detail-modal" class="modal-backdrop" aria-hidden="true" role="dialog" aria-labelledby="audit-detail-title">
-      <div class="modal-card" style="max-width: 650px;">
+      <div class="modal-card modal-card-lg">
         <div class="modal-header">
           <div>
             <h3 id="audit-detail-title">Inspection d'Événement d'Audit</h3>
@@ -2250,6 +3764,236 @@
 
           <div class="modal-footer" style="padding: 8px 0 0 0;">
             <button type="button" id="btn-close-audit-detail" class="btn-primary" style="margin-left: auto;">Fermer l'inspection</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         MODALES INTERACTIVES DU FLUX INTER-SERVICES (ÉTAPES 1, 2, 3 ET 4)
+         ==================================================================== -->
+
+    <!-- MODALE ÉTAPE 1 : VARIABLES & CONTRATS (GRH ➔ PAIE) -->
+    <div id="modal-flux-step1" class="modal-backdrop" aria-hidden="true" role="dialog" aria-labelledby="modal-s1-title">
+      <div class="modal-card modal-card-lg">
+        <div class="modal-header" style="background: linear-gradient(135deg, #0D9488 0%, #0F766E 100%);">
+          <div>
+            <h3 id="modal-s1-title" style="margin: 0; font-size: 16px; font-weight: 700; color: #FFFFFF;">Étape 1 : Variables de Paie & Contrats (GRH ➔ Paie)</h3>
+            <span style="font-size: 12px; opacity: 0.9; color: #CCFBF1;">Transmission mensuelle des éléments de rémunération et avenants de contrat</span>
+          </div>
+          <button id="close-modal-s1" class="modal-close-btn" aria-label="Fermer la boîte">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+        <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
+          <div style="background: #F0FDFA; border: 1px solid #99F6E4; border-radius: 8px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div style="font-size: 14px; font-weight: 700; color: #0F766E;">Lot Mensuel de Paie : Septembre 2026</div>
+              <div style="font-size: 12px; color: #115E59; margin-top: 2px;">Direction des Ressources Humaines • Validé par Clarisse NGOMA</div>
+            </div>
+            <span id="s1-modal-status-badge" class="acpe-badge" style="background: #0D9488;">Lot Transmis</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px; border-radius: 8px;">
+              <span style="font-size: 11px; color: #64748B; font-weight: 600; text-transform: uppercase;">Contrats Actifs</span>
+              <div style="font-size: 18px; font-weight: 800; color: #0F172A; margin-top: 4px;">485 Agents</div>
+              <span style="font-size: 11px; color: #0D9488;">14 avenants ce mois</span>
+            </div>
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px; border-radius: 8px;">
+              <span style="font-size: 11px; color: #64748B; font-weight: 600; text-transform: uppercase;">Variables Déclarées</span>
+              <div style="font-size: 18px; font-weight: 800; color: #0F172A; margin-top: 4px;">42 Éléments</div>
+              <span style="font-size: 11px; color: #64748B;">Primes, Heures supp., Astreintes</span>
+            </div>
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px; border-radius: 8px;">
+              <span style="font-size: 11px; color: #64748B; font-weight: 600; text-transform: uppercase;">Montant des Primes</span>
+              <div style="font-size: 18px; font-weight: 800; color: #0F172A; margin-top: 4px;">18 450 000 FCFA</div>
+              <span style="font-size: 11px; color: #059669;">Contrôle de conformité OK</span>
+            </div>
+          </div>
+
+          <div>
+            <span style="font-size: 12px; font-weight: 700; color: #0F172A; display: block; margin-bottom: 8px;">Éléments majeurs intégrés dans le lot :</span>
+            <ul style="font-size: 12.5px; color: #334155; line-height: 1.6; padding-left: 18px;">
+              <li>Prise en compte de 14 avenants d'avancement d'échelon (Arrêté DGCP/2026/042)</li>
+              <li>Primes de rendement trimestrielles attribuées au personnel technique (12 300 000 FCFA)</li>
+              <li>Heures supplémentaires d'astreinte informatique et maintenance réseau (6 150 000 FCFA)</li>
+              <li>Prise en compte de 3 congés sans solde et 1 régularisation d'absence autorisée</li>
+            </ul>
+          </div>
+
+          <div class="modal-footer" style="padding: 12px 0 0 0; display: flex; justify-content: space-between; align-items: center;">
+            <button type="button" class="btn-secondary" id="btn-s1-cancel">Fermer</button>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" class="btn-primary" id="btn-s1-transmit" style="background: #0D9488; border-color: #0F766E;">
+                <span>Transmettre à la Paie</span>
+              </button>
+              <button type="button" class="btn-primary" id="btn-s1-validate" style="background: #1F4E79;">
+                <span>Valider et Intégrer au Calcul</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODALE ÉTAPE 2 : FICHIER DE VIREMENT (PAIE ➔ FINANCE) -->
+    <div id="modal-flux-step2" class="modal-backdrop" aria-hidden="true" role="dialog" aria-labelledby="modal-s2-title">
+      <div class="modal-card modal-card-lg">
+        <div class="modal-header" style="background: linear-gradient(135deg, #1F4E79 0%, #1775B9 100%);">
+          <div>
+            <h3 id="modal-s2-title" style="margin: 0; font-size: 16px; font-weight: 700; color: #FFFFFF;">Étape 2 : Fichier de Virement Bancaire (Paie ➔ Finance)</h3>
+            <span style="font-size: 12px; opacity: 0.9; color: #DBEAFE;">Télé-transmission bancaire normalisée CEMAC et ordonnancement Trésor Public</span>
+          </div>
+          <button id="close-modal-s2" class="modal-close-btn" aria-label="Fermer la boîte">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+        <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
+          <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div style="font-size: 14px; font-weight: 700; color: #1E40AF;">Fichier Normalisé CEMAC : ACPE_VIREMENT_PAIE_2026-09.DAT</div>
+              <div style="font-size: 12px; color: #1D4ED8; margin-top: 2px;">Généré par Steve MOUKOKO (Chef Paie) • Certificat Trésor N° 99482</div>
+            </div>
+            <span class="acpe-badge" style="background: #1F4E79;">Prêt / Transmis</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px; border-radius: 8px;">
+              <span style="font-size: 11px; color: #64748B; font-weight: 600; text-transform: uppercase;">Masse Nette des Salaires</span>
+              <div style="font-size: 18px; font-weight: 800; color: #0F172A; margin-top: 4px;">142 580 400 FCFA</div>
+              <span style="font-size: 11px; color: #059669;">À décaisser par virement</span>
+            </div>
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px; border-radius: 8px;">
+              <span style="font-size: 11px; color: #64748B; font-weight: 600; text-transform: uppercase;">Bénéficiaires</span>
+              <div style="font-size: 18px; font-weight: 800; color: #0F172A; margin-top: 4px;">482 Ordres</div>
+              <span style="font-size: 11px; color: #64748B;">4 banques domiciliataires</span>
+            </div>
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px; border-radius: 8px;">
+              <span style="font-size: 11px; color: #64748B; font-weight: 600; text-transform: uppercase;">Contrôle Bancaire RIB</span>
+              <div style="font-size: 18px; font-weight: 800; color: #059669; margin-top: 4px;">481 Valides</div>
+              <span style="font-size: 11px; color: #EA580C;">1 alerte RIB en cours</span>
+            </div>
+          </div>
+
+          <div class="modal-footer" style="padding: 12px 0 0 0; display: flex; justify-content: space-between; align-items: center;">
+            <button type="button" class="btn-secondary" id="btn-s2-cancel">Fermer</button>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" class="btn-secondary" id="btn-s2-download" style="gap: 6px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                <span>Télécharger le Fichier</span>
+              </button>
+              <button type="button" class="btn-primary" id="btn-s2-transmit" style="background: #1F4E79;">
+                <span>Transmettre à la Finance</span>
+              </button>
+              <button type="button" class="btn-primary" id="btn-s2-ordonnancer" style="background: #059669; border-color: #047857;">
+                <span>Ordonnancer (Finance)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODALE ÉTAPE 4 : CRÉER UNE ALERTE RH (PAIE / FINANCE ➔ GRH) -->
+    <div id="modal-flux-step4-create" class="modal-backdrop" aria-hidden="true" role="dialog" aria-labelledby="modal-s4-title">
+      <div class="modal-card modal-card-lg">
+        <div class="modal-header" style="background: linear-gradient(135deg, #EA580C 0%, #C2410C 100%);">
+          <div>
+            <h3 id="modal-s4-title" style="margin: 0; font-size: 16px; font-weight: 700; color: #FFFFFF;">Étape 4 : Déclencher une Alerte RH (Alerte si besoin)</h3>
+            <span style="font-size: 12px; opacity: 0.9; color: #FFEDD5;">Signalement immédiat vers la GRH pour blocage, anomalie contrat ou rejet bancaire</span>
+          </div>
+          <button id="close-modal-s4" class="modal-close-btn" aria-label="Fermer la boîte">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+        <form id="form-create-alert-rh" class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label for="alert-source-select" class="acpe-label">Service Émetteur :</label>
+              <select id="alert-source-select" class="acpe-select" required>
+                <option value="GESTIONNAIRE DE PAIE" selected>GESTIONNAIRE DE PAIE (Steve MOUKOKO)</option>
+                <option value="SERVICE FINANCIER">SERVICE FINANCIER (Alain BILONGO)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="alert-cible-select" class="acpe-label">Service Destinataire :</label>
+              <select id="alert-cible-select" class="acpe-select" disabled>
+                <option value="GRH" selected>DIRECTION DES RESSOURCES HUMAINES (GRH)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label for="alert-type-select" class="acpe-label">Type d'Anomalie :</label>
+              <select id="alert-type-select" class="acpe-select" required>
+                <option value="CONTRAT_EXPIRATION">Échéance de contrat / Avenant manquant</option>
+                <option value="RIB_INVALIDE">Rejet RIB / Coordonnées bancaires erronées</option>
+                <option value="VARIABLE_SUSPECTE">Variable de paie incohérente ou hors barème</option>
+                <option value="ABSENCE_INJUSTIFIEE">Absence non couverte par justificatif</option>
+                <option value="AUTRE">Autre anomalie administrative</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="alert-urgency-select" class="acpe-label">Niveau d'Urgence :</label>
+              <select id="alert-urgency-select" class="acpe-select" required>
+                <option value="Haute" selected>🔴 Haute (Blocage du salaire si non régularisé)</option>
+                <option value="Moyenne">🟠 Moyenne (Régularisation requise avant virement)</option>
+                <option value="Faible">🟡 Faible (Simple information administrative)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="alert-agent-input" class="acpe-label">Agent concerné (Nom & Matricule) :</label>
+            <input type="text" id="alert-agent-input" class="acpe-input" placeholder="Ex: Sophie Benali (EPA-2025-004)" required />
+          </div>
+
+          <div class="form-group">
+            <label for="alert-desc-input" class="acpe-label">Description précise du motif de l'alerte :</label>
+            <textarea id="alert-desc-input" class="acpe-input" rows="3" placeholder="Précisez le détail du problème constaté et l'action attendue de la GRH..." required></textarea>
+          </div>
+
+          <div class="modal-footer" style="padding: 8px 0 0 0; display: flex; justify-content: space-between; align-items: center;">
+            <button type="button" class="btn-secondary" id="btn-cancel-alert">Annuler</button>
+            <button type="submit" class="btn-primary" style="background: #EA580C; border-color: #C2410C;">
+              <span>Transmettre l'Alerte RH à la GRH</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODALE RÉGULARISATION ALERTE RH (CÔTÉ GRH) -->
+    <div id="modal-flux-regulariser" class="modal-backdrop" aria-hidden="true" role="dialog" aria-labelledby="modal-reg-title">
+      <div class="modal-card">
+        <div class="modal-header" style="background: linear-gradient(135deg, #059669 0%, #047857 100%);">
+          <div>
+            <h3 id="modal-reg-title" style="margin: 0; font-size: 16px; font-weight: 700; color: #FFFFFF;">Régulariser l'Alerte RH (GRH)</h3>
+            <span style="font-size: 12px; opacity: 0.9; color: #D1FAE5;">Traitement de l'anomalie et levée de la réserve</span>
+          </div>
+          <button id="close-modal-reg" class="modal-close-btn" aria-label="Fermer la boîte">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+        <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px; border-radius: 8px;">
+            <div style="font-size: 11px; color: #64748B; font-weight: 600; text-transform: uppercase;">Alerte sélectionnée :</div>
+            <div id="modal-reg-agent" style="font-size: 14px; font-weight: 700; color: #0F172A; margin-top: 2px;">Sophie Benali (EPA-2025-004)</div>
+            <div id="modal-reg-desc" style="font-size: 12px; color: #475569; margin-top: 4px;">Contrat CDD expirant au 30/09/2026. Avenant requis.</div>
+          </div>
+
+          <div class="form-group">
+            <label for="reg-resolution-text" class="acpe-label">Action de régularisation effectuée :</label>
+            <textarea id="reg-resolution-text" class="acpe-input" rows="3" placeholder="Ex: Avenant de renouvellement N° 2026-AV-14 signé par la DG et déposé. RIB officiel bancaire validé..."></textarea>
+          </div>
+
+          <div class="modal-footer" style="padding: 8px 0 0 0; display: flex; justify-content: space-between; align-items: center;">
+            <button type="button" class="btn-secondary" id="btn-cancel-reg">Fermer</button>
+            <button type="button" class="btn-primary" id="btn-confirm-reg" style="background: #059669; border-color: #047857;">
+              <span>Enregistrer la Régularisation</span>
+            </button>
           </div>
         </div>
       </div>

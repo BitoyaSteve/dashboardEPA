@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Modèle Bulletin de Salaire — ACPE</title>
+<title>Modèle Bulletin de Salaire ACPE</title>
 <style>
   body { font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #1a1a1a; max-width: 850px; margin: 30px auto; }
   h1 { text-align: center; color: #1F4E79; margin-bottom: 4px; }
@@ -12,6 +12,20 @@
   table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
   td, th { border: 1px solid #333; padding: 4px 6px; }
   th { background: #D9E2F3; }
+  #mainTableBlock table { border: 1px solid #CBD5E1; border-collapse: collapse; }
+  #mainTableBlock th { border: 1px solid #94A3B8; }
+  #mainTableBlock td {
+    border-top: none !important;
+    border-bottom: none !important;
+    border-left: 1px solid #CBD5E1 !important;
+    border-right: 1px solid #CBD5E1 !important;
+  }
+  #mainTableBlock tr.total-row td {
+    border-top: 1px solid #CBD5E1 !important;
+    border-bottom: 1px solid #CBD5E1 !important;
+    border-left: 1px solid #CBD5E1 !important;
+    border-right: 1px solid #CBD5E1 !important;
+  }
   .num { text-align: right; }
   .center { text-align: center; }
   .label { font-weight: bold; background: #f4f4f4; width: 22%; }
@@ -22,14 +36,40 @@
 </head>
 <body>
 
-<h1>ACPE</h1>
-<div class="subtitle"><strong>BULLETIN DE SALAIRE</strong> — <span id="periodeLabel"></span></div>
-<div class="period" id="periodeDates"></div>
-<div class="address">Avenue Edith Lucie Bongo Ondimba, zone industrielle de Mpila | BP: 2006 - République du Congo</div>
+<div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1F4E79; padding-bottom: 12px; margin-bottom: 12px;">
+  <div style="display: flex; align-items: center; justify-content: flex-start;">
+    <img src="/acpe-logo.png" alt="Logo" style="height: 52px; max-width: 170px; object-fit: contain;" onerror="this.style.display='none'" />
+  </div>
+  <div style="text-align: right;">
+    <div style="font-size: 13.5px; font-weight: 700; color: #111827;" id="periodeLabel"></div>
+    <div style="font-size: 10.5px; color: #4B5563; margin-top: 2px;" id="periodeDates"></div>
+  </div>
+</div>
+
+<div style="text-align: center; margin-top: 18px; margin-bottom: 16px;">
+  <div style="font-size: 18px; font-weight: 800; color: #1F4E79; letter-spacing: 0.8px;">BULLETIN DE PAIE</div>
+  <div style="font-size: 9.5px; color: #4B5563; margin-top: 4px; line-height: 1.35;">Avenue Edith Lucie Bongo Ondimba, zone industrielle de Mpila | BP: 2006, Brazzaville (République du Congo)</div>
+</div>
 
 <div id="infoBlock"></div>
 <div id="mainTableBlock"></div>
 <div id="cumulsBlock"></div>
+
+<div style="margin-top: 55px; border-top: 1px solid #CBD5E1; padding-top: 16px;">
+  <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+    <div style="text-align: left; width: 45%;">
+      <div style="font-weight: 700; font-size: 11.5px; color: #1F4E79; text-transform: uppercase; letter-spacing: 0.3px;">Signature de l'employé</div>
+      <div style="margin-top: 50px; border-bottom: 1px dashed #94A3B8; width: 220px;"></div>
+    </div>
+    <div style="text-align: right; width: 45%; display: flex; flex-direction: column; align-items: flex-end;">
+      <div style="font-weight: 700; font-size: 11.5px; color: #1F4E79; text-transform: uppercase; letter-spacing: 0.3px;">Signature de l'employeur</div>
+      <div style="margin-top: 50px; border-bottom: 1px dashed #94A3B8; width: 220px;"></div>
+    </div>
+  </div>
+  <div style="text-align: center; margin-top: 24px; font-size: 9.5px; color: #64748B; font-style: italic;">
+    Validation de conformité : Document certifié conforme généré par le Système Intégré de Paie ACPE
+  </div>
+</div>
 
 <script>
 /* ============ 1. DONNÉES D'ENTRÉE (à remplacer par les données de ton app) ============ */
@@ -93,8 +133,12 @@ function calculerBulletin(d) {
 }
 
 /* ============ 3. FORMATAGE ============ */
-const fmt = n => n === undefined || n === null || n === '' ? '' :
-  Number(n).toLocaleString('fr-FR', { maximumFractionDigits: 2 });
+const fmt = function(n) {
+  if (n === undefined || n === null || n === '') return '';
+  const num = typeof n === 'string' ? parseFloat(n.replace(/\s/g, '').replace(',', '.')) : Number(n);
+  if (isNaN(num)) return String(n);
+  return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+};
 
 /* ============ 4. RENDU ============ */
 function render(d) {
@@ -106,7 +150,7 @@ function render(d) {
 
   document.getElementById('infoBlock').innerHTML = `
     <table>
-      <tr><td class="label">Nom(s) et Prénom(s)</td><td>${e.nom || '—'}</td>
+      <tr><td class="label">Nom(s) et Prénom(s)</td><td>${e.nom || ''}</td>
           <td class="label">Localité</td><td>${e.localite}</td></tr>
       <tr><td class="label">Matricule</td><td>${e.matricule}</td>
           <td class="label">Département</td><td>${e.departement}</td></tr>
@@ -114,7 +158,7 @@ function render(d) {
           <td class="label">Fonction</td><td>${e.fonction}</td></tr>
       <tr><td class="label">Date Embauche</td><td>${e.dateEmbauche}</td>
           <td class="label">Catégorie</td><td>${e.categorie}</td></tr>
-      <tr><td class="label">Ancienneté</td><td>${e.anciennete}</td>
+      <tr><td class="label">Ancienneté</td><td>${e.anciennete} ans</td>
           <td class="label">Statut</td><td>${e.statut}</td></tr>
       <tr><td class="label">Sit. Matrimoniale</td><td>${e.situationMatrimoniale}</td>
           <td class="label">Collège</td><td>${e.college}</td></tr>
@@ -126,54 +170,189 @@ function render(d) {
 
   document.getElementById('mainTableBlock').innerHTML = `
     <table>
-      <tr>
-        <th>N°</th><th>Désignation</th><th>Nombre</th><th>Base</th>
-        <th colspan="3">Part salariale</th><th colspan="2">Part patronale</th>
-      </tr>
-      <tr>
-        <th></th><th></th><th></th><th></th>
-        <th>Taux</th><th>Gain</th><th>Retenue</th><th>Taux</th><th>Retenue</th>
-      </tr>
-      <tr><td class="center">1000</td><td>Salaire de base</td><td class="num">${r.nombreJours}</td>
-          <td class="num">${fmt(r.tauxJournalier)}</td><td></td><td class="num">${fmt(c.salaireBase)}</td><td></td><td></td><td></td></tr>
-      <tr><td class="center">1020</td><td>Prime ancienneté</td><td></td>
-          <td class="num">${fmt(c.salaireBase)}</td><td class="num">${r.tauxAnciennete*100}</td>
-          <td class="num">${fmt(c.primeAnciennete)}</td><td></td><td></td><td></td></tr>
-      <tr><td class="center">1060</td><td>Indemnité de sujétion</td><td></td>
-          <td class="num">${fmt(r.indemniteSujetion)}</td><td></td><td class="num">${fmt(r.indemniteSujetion)}</td><td></td><td></td><td></td></tr>
-      <tr class="bold italic"><td></td><td>Total Brut</td><td></td><td></td><td></td>
-          <td class="num">${fmt(c.totalBrut)}</td><td></td><td></td><td></td></tr>
-      <tr><td class="center">9000</td><td>Cotisation CNSS (PVID)</td><td></td>
-          <td class="num">${fmt(r.cnssBasePlafond)}</td><td class="num">4</td><td></td>
-          <td class="num">${fmt(c.cnssPvidSal)}</td><td class="num">8</td><td class="num">${fmt(c.cnssPvidPat)}</td></tr>
-      <tr><td class="center">9001</td><td>Cotisation CNSS (Plafonné)</td><td></td>
-          <td class="num">${fmt(r.cnssBasePlafond)}</td><td class="num">0</td><td></td>
-          <td class="num">0</td><td class="num">12</td><td class="num">${fmt(c.cnssPlafPat)}</td></tr>
-      <tr><td class="center">9002</td><td>Retenue ITS</td><td></td><td></td><td></td><td></td>
-          <td class="num">${fmt(c.its)}</td><td></td><td></td></tr>
-      <tr><td class="center">9003</td><td>Retenue Mutuelle (MUTRAPE)</td><td></td>
-          <td class="num">${fmt(r.mutuelle)}</td><td></td><td></td><td class="num">${fmt(r.mutuelle)}</td><td></td><td></td></tr>
-      <tr><td class="center">9004</td><td>MUTRA ACPE</td><td></td>
-          <td class="num">${fmt(r.mutraAcpe)}</td><td></td><td></td><td class="num">${fmt(r.mutraAcpe)}</td><td></td><td></td></tr>
-      <tr class="bold italic"><td></td><td>Total Cotisations</td><td></td><td></td><td></td><td></td>
-          <td class="num">${fmt(c.totalCotisSalariales)}</td><td></td><td class="num">${fmt(c.totalCotisPatronales)}</td></tr>
-      <tr><td class="center">4000</td><td>Indemnité de transport</td><td></td>
-          <td class="num">${fmt(r.indemniteTransport)}</td><td></td><td class="num">${fmt(r.indemniteTransport)}</td><td></td><td></td><td class="num">0</td></tr>
-      <tr><td class="center">9005</td><td>Rappel sur les écarts de salaire</td><td></td>
-          <td class="num">${fmt(r.rappelEcarts)}</td><td></td><td class="num">${fmt(r.rappelEcarts)}</td><td></td><td></td><td class="num">0</td></tr>
+      <thead>
+        <tr>
+          <th rowspan="2" class="center">N°</th>
+          <th rowspan="2">Désignation</th>
+          <th rowspan="2" class="center">Nombre</th>
+          <th rowspan="2" class="num">Base</th>
+          <th colspan="3" class="center">Part salariale</th>
+          <th colspan="2" class="center">Part patronale</th>
+        </tr>
+        <tr>
+          <th class="center">Taux</th>
+          <th class="num">Gain</th>
+          <th class="num">Retenue</th>
+          <th class="center">Taux</th>
+          <th class="num">Retenue</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="center">1000</td>
+          <td>Salaire de base</td>
+          <td class="center">${r.nombreJours || 26}</td>
+          <td class="num">${fmt(r.tauxJournalier)}</td>
+          <td></td>
+          <td class="num">${fmt(c.salaireBase)}</td>
+          <td></td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td class="center">1020</td>
+          <td>Prime ancienneté</td>
+          <td></td>
+          <td class="num">${fmt(c.salaireBase)}</td>
+          <td class="center"></td>
+          <td class="num">${fmt(c.primeAnciennete)}</td>
+          <td></td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td class="center">1060</td>
+          <td>Indemnité de sujétion</td>
+          <td></td>
+          <td class="num">${fmt(r.indemniteSujetion)}</td>
+          <td></td>
+          <td class="num">${fmt(r.indemniteSujetion)}</td>
+          <td></td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr class="bold italic total-row" style="background-color: #F8FAFC;">
+          <td></td>
+          <td colspan="4">Total Brut</td>
+          <td class="num">${fmt(c.totalBrut)}</td>
+          <td colspan="3"></td>
+        </tr>
+        <tr>
+          <td class="center">9000</td>
+          <td>Cotisation CNSS (PVID)</td>
+          <td></td>
+          <td class="num">${fmt(r.cnssBasePlafond)}</td>
+          <td class="center"></td>
+          <td></td>
+          <td class="num">${fmt(c.cnssPvidSal)}</td>
+          <td class="center"></td>
+          <td class="num">${fmt(c.cnssPvidPat)}</td>
+        </tr>
+        <tr>
+          <td class="center">9001</td>
+          <td>Cotisation CNSS (Plafonné)</td>
+          <td></td>
+          <td class="num">${fmt(r.cnssBasePlafond)}</td>
+          <td class="center"></td>
+          <td></td>
+          <td class="center"></td>
+          <td class="center"></td>
+          <td class="num">${fmt(c.cnssPlafPat)}</td>
+        </tr>
+        <tr>
+          <td class="center">9002</td>
+          <td>Retenue ITS</td>
+          <td></td>
+          <td class="num">${fmt(c.netImposable)}</td>
+          <td></td>
+          <td></td>
+          <td class="num">${fmt(c.its)}</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td class="center">9003</td>
+          <td>Retenue Mutuelle (MUTRAPE)</td>
+          <td></td>
+          <td class="num">${fmt(r.mutuelle)}</td>
+          <td></td>
+          <td></td>
+          <td class="num">${fmt(r.mutuelle)}</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td class="center">9004</td>
+          <td>MUTRA ACPE</td>
+          <td></td>
+          <td class="num">${fmt(r.mutraAcpe)}</td>
+          <td></td>
+          <td></td>
+          <td class="num">${fmt(r.mutraAcpe)}</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr class="bold italic total-row" style="background-color: #F8FAFC;">
+          <td></td>
+          <td colspan="5">Total Cotisations</td>
+          <td class="num">${fmt(c.totalCotisSalariales)}</td>
+          <td></td>
+          <td class="num">${fmt(c.totalCotisPatronales)}</td>
+        </tr>
+        <tr>
+          <td class="center">4000</td>
+          <td>Indemnité de transport</td>
+          <td></td>
+          <td class="num">${fmt(r.indemniteTransport)}</td>
+          <td></td>
+          <td class="num">${fmt(r.indemniteTransport)}</td>
+          <td></td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td class="center">9005</td>
+          <td>Rappel sur les écarts de salaire</td>
+          <td></td>
+          <td class="num">${r.rappelEcarts ? fmt(r.rappelEcarts) : ''}</td>
+          <td></td>
+          <td class="num">${r.rappelEcarts ? fmt(r.rappelEcarts) : ''}</td>
+          <td></td>
+          <td></td>
+          <td></td>
+        </tr>
+      </tbody>
     </table>`;
 
   document.getElementById('cumulsBlock').innerHTML = `
     <table>
-      <tr><th>Cumuls</th><th>Salaire Brut</th><th>Charges salariales</th><th>Charges patronales</th>
-          <th>Avantage en nature</th><th>Net imposable</th><th>Heures trav.</th><th>Heures suppl.</th><th>NET A PAYER</th></tr>
-      <tr><td class="bold">Période</td><td class="num">${fmt(c.totalBrut)}</td>
-          <td class="num">${fmt(c.totalCotisSalariales)}</td><td class="num">${fmt(c.totalCotisPatronales)}</td>
-          <td></td><td class="num">${fmt(c.netImposable)}</td><td></td><td></td>
-          <td class="num bold">${fmt(c.netAPayer)}</td></tr>
-      <tr><td class="bold">Années</td><td class="num">${fmt(d.cumulsAnnee.brut)}</td>
-          <td class="num">${fmt(d.cumulsAnnee.chargesSalariales)}</td><td class="num">${fmt(d.cumulsAnnee.chargesPatronales)}</td>
-          <td></td><td class="num">${fmt(d.cumulsAnnee.netImposable)}</td><td></td><td></td><td></td></tr>
+      <thead>
+        <tr>
+          <th>Cumuls</th>
+          <th class="num">Salaire Brut</th>
+          <th class="num">Charges salariales</th>
+          <th class="num">Charges patronales</th>
+          <th class="center">Avantage en nature</th>
+          <th class="num">Net imposable</th>
+          <th class="center">Heures trav.</th>
+          <th class="center">Heures suppl.</th>
+          <th class="num" style="background: #C6D9F1; color: #1F4E79; font-weight: 800;">NET A PAYER</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="bold">Période</td>
+          <td class="num">${fmt(c.totalBrut)}</td>
+          <td class="num">${fmt(c.totalCotisSalariales)}</td>
+          <td class="num">${fmt(c.totalCotisPatronales)}</td>
+          <td class="center"></td>
+          <td class="num">${fmt(c.netImposable)}</td>
+          <td class="center">173,33</td>
+          <td class="center">0</td>
+          <td class="num bold" style="background: #EBF1F5; color: #1F4E79; font-size: 13.5px; white-space: nowrap;">${fmt(c.netAPayer)} FCFA</td>
+        </tr>
+        <tr>
+          <td class="bold">Années</td>
+          <td class="num">${fmt(d.cumulsAnnee.brut)}</td>
+          <td class="num">${fmt(d.cumulsAnnee.chargesSalariales)}</td>
+          <td class="num">${fmt(d.cumulsAnnee.chargesPatronales)}</td>
+          <td class="center"></td>
+          <td class="num">${fmt(d.cumulsAnnee.netImposable)}</td>
+          <td class="center"></td>
+          <td class="center"></td>
+          <td class="center" style="background: #F8FAFC; color: #9CA3AF;"></td>
+        </tr>
+      </tbody>
     </table>`;
 }
 

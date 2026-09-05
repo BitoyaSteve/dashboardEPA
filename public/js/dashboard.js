@@ -1210,7 +1210,22 @@
     auditSearch: '',
     auditActionFilter: '',
     auditUserFilter: '',
-    selectedAuditId: null
+    selectedAuditId: null,
+
+    // État de l'Espace Paie & République du Congo
+    payrollYear: '2026',
+    payrollMonth: '09',
+    payrollPeriod: 'Septembre 2026',
+    payrollContractFilter: 'Tous',
+    payrollScope: 'global',
+    payrollIndividualMatricule: null,
+    payrollStatus: 'OUVERTE',
+    payrollCalculatedSlips: {},
+    payrollValidatedSlips: new Set(),
+    payrollChannelFilterMode: 'all',
+    payrollChannelFilterBank: 'all',
+    payrollChannelFilterDept: 'all',
+    payrollChannelSearch: ''
   };
 
   /* --------------------------------------------------------------------------
@@ -1284,6 +1299,10 @@
     settings: {
       title: 'Paramètres du Système de Paie',
       subtitle: 'Configuration indiciaire, barèmes et constantes de calcul EPA'
+    },
+    paie: {
+      title: 'Calcul & Gestion de la Paie',
+      subtitle: 'Lancer le calcul automatique des salaires, valider la période et ordonnancer les paiements en République du Congo'
     }
   };
 
@@ -1292,8 +1311,10 @@
     AppState.currentPage = targetPage;
 
     // 1. Mise à jour de la classe active sur les liens de navigation
-    document.querySelectorAll('.nav-link').forEach(link => {
-      const linkTarget = link.getAttribute('href').replace('#', '');
+    document.querySelectorAll('.sidebar-nav a.nav-link').forEach(link => {
+      const href = link.getAttribute('href');
+      if (!href) return;
+      const linkTarget = href.replace('#', '') || 'dashboard';
       if (linkTarget === targetPage) {
         link.classList.add('active');
         link.setAttribute('aria-current', 'page');
@@ -1327,6 +1348,8 @@
     if (targetPage === 'dashboard') {
       renderChart();
       renderPayslipsTable();
+    } else if (targetPage === 'paie') {
+      renderPayrollView();
     } else if (targetPage === 'employees') {
       renderEmployeesTable();
     } else if (targetPage === 'payslips') {
@@ -1725,10 +1748,15 @@
           <td><strong style="color: var(--color-text-main);">${escapeHtml(emp.echelon)}</strong></td>
           <td><span class="net-amount">${formatCurrency(emp.traitementNet)}</span></td>
           <td><span class="acpe-badge">${escapeHtml(emp.statutAgent)}</span></td>
-          <td style="text-align: right;">
-            <button type="button" class="btn-secondary btn-sm view-slip-btn" data-matricule="${escapeHtml(emp.matricule)}">
-              Fiche paie
-            </button>
+          <td style="text-align: right; white-space: nowrap;">
+            <div style="display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end;">
+              <button type="button" class="btn-secondary btn-sm view-agent-profile-btn" data-matricule="${escapeHtml(emp.matricule)}" title="Consulter la fiche administrative de l'agent">
+                Fiche Agent
+              </button>
+              <button type="button" class="btn-primary btn-sm view-slip-btn" data-matricule="${escapeHtml(emp.matricule)}" title="Consulter le bulletin officiel ACPE" style="padding: 5px 9px;">
+                Bulletin
+              </button>
+            </div>
           </td>
         </tr>
       `;
@@ -2160,7 +2188,7 @@
     tbody.querySelectorAll('.btn-contract-view-agent').forEach(btn => {
       btn.addEventListener('click', () => {
         const mat = btn.getAttribute('data-matricule');
-        openPayslipModal(mat);
+        openAgentDetailModal(mat);
       });
     });
   }
@@ -2450,6 +2478,978 @@
     }
   }
 
+  /* --------------------------------------------------------------------------
+     ESPACE PAIE & RÉPUBLIQUE DU CONGO (CALCUL, VALIDATION, PAIEMENT, VENTILATION)
+     -------------------------------------------------------------------------- */
+  const CONGO_DATA = {
+    departments: {
+      "Brazzaville": {
+        chefLieu: "Brazzaville",
+        villes: [
+          "Brazzaville (Makélékélé)", "Brazzaville (Bacongo)", "Brazzaville (Poto-Poto)",
+          "Brazzaville (Moungali)", "Brazzaville (Ouenzé)", "Brazzaville (Talangaï)",
+          "Brazzaville (Mfilou)", "Brazzaville (Madibou)", "Brazzaville (Djiri)",
+          "Kintélé", "Île Mbamou"
+        ]
+      },
+      "Pointe-Noire": {
+        chefLieu: "Pointe-Noire",
+        villes: [
+          "Pointe-Noire (Lumumba)", "Pointe-Noire (Mvoumvou)", "Pointe-Noire (Tié-Tié)",
+          "Pointe-Noire (Loandjili)", "Pointe-Noire (Mongo-Poukou)", "Pointe-Noire (Ngoyo)",
+          "Tchiamba-Nzassi"
+        ]
+      },
+      "Kouilou": {
+        chefLieu: "Hinda",
+        villes: ["Hinda (Chef-lieu)", "Madingo-Kayes", "Mvouti", "Kakamoeka", "Loango", "Nzambi"]
+      },
+      "Niari": {
+        chefLieu: "Dolisie",
+        villes: ["Dolisie (Chef-lieu)", "Mossendjo", "Kibangou", "Kimongo", "Makabana", "Mayoko", "Moutamba", "Londela-Kayes", "Louvakou", "Nyanga", "Yaya"]
+      },
+      "Bouenza": {
+        chefLieu: "Madingou",
+        villes: ["Madingou (Chef-lieu)", "Nkayi", "Loutété", "Loudima", "Mouyondzi", "Boko-Songho", "Mabombo", "Kingoué", "Tsiaki", "Yamba"]
+      },
+      "Lékoumou": {
+        chefLieu: "Sibiti",
+        villes: ["Sibiti (Chef-lieu)", "Komono", "Zanaga", "Mayéyé", "Bambama"]
+      },
+      "Pool": {
+        chefLieu: "Kinkala",
+        villes: ["Kinkala (Chef-lieu)", "Mindouli", "Boko", "Kindamba", "Goma Tsé-Tsé", "Mayama", "Ngabé", "Louingui", "Loumo", "Ignié", "Vindza", "Kimba"]
+      },
+      "Plateaux": {
+        chefLieu: "Djambala",
+        villes: ["Djambala (Chef-lieu)", "Gamboma", "Lekana", "Ngo", "Mpouya", "Ollombo", "Allembé", "Makotimpoko"]
+      },
+      "Cuvette": {
+        chefLieu: "Owando",
+        villes: ["Owando (Chef-lieu)", "Oyo", "Boundji", "Makoua", "Mossaka", "Ngoko", "Ntokou", "Loukoléla", "Tchikapika"]
+      },
+      "Cuvette-Ouest": {
+        chefLieu: "Ewo",
+        villes: ["Ewo (Chef-lieu)", "Kellé", "Mbomo", "Okoyo", "Etoumbi"]
+      },
+      "Sangha": {
+        chefLieu: "Ouesso",
+        villes: ["Ouesso (Chef-lieu)", "Pokola", "Mokéko", "Sembé", "Souanké", "Ngbala", "Pikounda"]
+      },
+      "Likouala": {
+        chefLieu: "Impfondo",
+        villes: ["Impfondo (Chef-lieu)", "Bétou", "Dongou", "Enyellé", "Epéna", "Liranga", "Bouanila"]
+      }
+    },
+    banks: [
+      "BGFIBank Congo",
+      "Société Générale Congo (SGC)",
+      "Banque Postale du Congo (BPC)",
+      "Crédit du Congo (Attijariwafa Bank)",
+      "LCB Bank (Banque Commerciale)",
+      "UBA Congo (United Bank for Africa)",
+      "EcoBank Congo",
+      "Banque Commerciale Internationale (BCI)",
+      "Banque Sino-Congolaise pour l'Afrique (BSCA Bank)",
+      "MUCODEC (Mutuelles Congolaises d'Épargne et de Crédit)",
+      "CAPPED (Microfinance Congo)",
+      "BEAC / Trésor Public (Compte Unique du Trésor)"
+    ],
+    cashOutlets: [
+      "Caisse Centrale du Trésor Public (Brazzaville)",
+      "Billetterie Régionale ACPE (Pointe-Noire)",
+      "Paierie Départementale du Trésor (Dolisie)",
+      "Paierie Départementale du Trésor (Nkayi)",
+      "Paierie Départementale du Trésor (Owando)",
+      "Paierie Départementale du Trésor (Ouesso)",
+      "Régie d'avances de paie ACPE (Caisse centrale)"
+    ],
+    momoOperators: [
+      "MTN Mobile Money Congo (MoMo)",
+      "Airtel Money Congo"
+    ],
+    cardTypes: [
+      "Carte Visa Débit / Premier",
+      "Carte Mastercard Débit (MasterClasse)",
+      "Carte Interbancaire GIMAC CEMAC"
+    ]
+  };
+
+  // Initialisation du registre des paiements au Congo
+  function initCongoPayments() {
+    if (AppState.congoPayments && AppState.congoPayments.length > 0) return;
+
+    const baseList = [];
+    const depts = Object.keys(CONGO_DATA.departments);
+    const employees = MockData.employees || [];
+
+    employees.forEach((emp, index) => {
+      const deptName = depts[index % depts.length];
+      const deptObj = CONGO_DATA.departments[deptName];
+      const villeName = deptObj.villes[index % deptObj.villes.length];
+
+      // Répartition des canaux de paiement
+      let methode = 'Virement';
+      let etablissement = CONGO_DATA.banks[index % CONGO_DATA.banks.length];
+      let numero = `CG012 000${(1000 + index)} 00000000${(index + 10)} 45`;
+
+      const mod = index % 10;
+      if (mod === 3 || mod === 7) {
+        methode = 'Mobile Money';
+        etablissement = (index % 2 === 0) ? 'MTN Mobile Money Congo (MoMo)' : 'Airtel Money Congo';
+        numero = (index % 2 === 0) ? `06 6${(100000 + index * 3421).toString().slice(0, 6)}` : `05 5${(200000 + index * 4512).toString().slice(0, 6)}`;
+      } else if (mod === 5) {
+        methode = 'Carte Bancaire';
+        etablissement = (index % 2 === 0) ? 'Carte Visa Débit / Premier' : 'Carte Mastercard Débit (MasterClasse)';
+        numero = `4258 ${(1000 + index * 32)} ${(2000 + index * 54)} ${(3000 + index * 12)}`;
+      } else if (mod === 9) {
+        methode = 'Remise à la main (Espèces / Billetterie)';
+        etablissement = CONGO_DATA.cashOutlets[index % CONGO_DATA.cashOutlets.length];
+        numero = `BON-TR-CG-2026-${(100 + index)}`;
+      }
+
+      const pslip = MockData.payslips.find(p => p.matricule === emp.matricule);
+      const montantNet = pslip ? pslip.net : (emp.salaireBase ? Math.round(emp.salaireBase * 0.85) : 320000);
+
+      baseList.push({
+        id: `PAY-CG-${String(index + 1).padStart(3, '0')}`,
+        matricule: emp.matricule,
+        agent: emp.nom,
+        direction: emp.direction,
+        departement: deptName,
+        ville: villeName,
+        methode: methode,
+        etablissement: etablissement,
+        numero: numero,
+        montant: montantNet,
+        statut: 'Ordonnancé',
+        date: '15/09/2026'
+      });
+    });
+
+    AppState.congoPayments = baseList;
+  }
+
+  // Rendu de l'Espace Paie
+  function renderPayrollView() {
+    initCongoPayments();
+
+    // 1. Synchronisation de la navigation par onglets internes
+    const tabBtns = document.querySelectorAll('.payroll-tab-btn');
+    const tabPanels = {
+      'calc-paie': document.getElementById('payroll-panel-calc'),
+      'validation-paie': document.getElementById('payroll-panel-validation'),
+      'paiement-congo': document.getElementById('payroll-panel-paiement'),
+      'ventilation-masse': document.getElementById('payroll-panel-ventilation')
+    };
+
+    tabBtns.forEach(btn => {
+      btn.onclick = () => {
+        const targetTab = btn.getAttribute('data-tab');
+        tabBtns.forEach(b => {
+          b.classList.toggle('active', b === btn);
+          b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
+        });
+        Object.keys(tabPanels).forEach(key => {
+          if (tabPanels[key]) {
+            const isTarget = key === targetTab;
+            tabPanels[key].style.display = isTarget ? 'block' : 'none';
+            tabPanels[key].classList.toggle('active', isTarget);
+          }
+        });
+
+        if (targetTab === 'calc-paie') renderPayrollCalcSection();
+        else if (targetTab === 'validation-paie') renderPayrollValidationSection();
+        else if (targetTab === 'paiement-congo') renderCongoPaymentForm();
+        else if (targetTab === 'ventilation-masse') renderPayrollVentilation();
+      };
+    });
+
+    // 2. Boutons de redirection rapide internes
+    const btnReturnDash = document.getElementById('btn-paie-return-dash');
+    if (btnReturnDash) {
+      btnReturnDash.onclick = () => switchPage('dashboard');
+    }
+
+    const btnGoValidation = document.getElementById('btn-payroll-go-validation');
+    if (btnGoValidation) {
+      btnGoValidation.onclick = () => {
+        const valTabBtn = document.querySelector('.payroll-tab-btn[data-tab="validation-paie"]');
+        if (valTabBtn) valTabBtn.click();
+      };
+    }
+
+    const btnGoPayment = document.getElementById('btn-payroll-go-payment');
+    if (btnGoPayment) {
+      btnGoPayment.onclick = () => {
+        const payTabBtn = document.querySelector('.payroll-tab-btn[data-tab="paiement-congo"]');
+        if (payTabBtn) payTabBtn.click();
+      };
+    }
+
+    // 3. Configuration des sélecteurs de période (Année / Mois / Période de paie)
+    const selAnnee = document.getElementById('payroll-sel-annee');
+    const selMois = document.getElementById('payroll-sel-mois');
+    const selPeriode = document.getElementById('payroll-sel-periode');
+    const selValPeriode = document.getElementById('validation-select-period');
+
+    const moisNoms = {
+      '01': 'Janvier', '02': 'Février', '03': 'Mars', '04': 'Avril',
+      '05': 'Mai', '06': 'Juin', '07': 'Juillet', '08': 'Août',
+      '09': 'Septembre', '10': 'Octobre', '11': 'Novembre', '12': 'Décembre'
+    };
+
+    function syncPeriodChange(newPeriodLabel) {
+      AppState.payrollPeriod = newPeriodLabel;
+      const parts = newPeriodLabel.split(' ');
+      if (parts.length === 2) {
+        const mName = parts[0];
+        const yVal = parts[1];
+        if (selAnnee) selAnnee.value = yVal;
+        const foundCode = Object.keys(moisNoms).find(k => moisNoms[k] === mName);
+        if (foundCode && selMois) selMois.value = foundCode;
+      }
+
+      if (selPeriode) selPeriode.value = newPeriodLabel;
+      if (selValPeriode) selValPeriode.value = newPeriodLabel;
+
+      const calcTitle = document.getElementById('payroll-active-period-label');
+      if (calcTitle) calcTitle.textContent = newPeriodLabel;
+      const valTitle = document.getElementById('val-period-title-display');
+      if (valTitle) valTitle.textContent = newPeriodLabel;
+
+      renderPayrollCalcSection();
+      renderPayrollValidationSection();
+      renderPayrollVentilation();
+    }
+
+    if (selAnnee && selMois) {
+      const handleMonthYearChange = () => {
+        const y = selAnnee.value;
+        const m = selMois.value;
+        if (m && moisNoms[m]) {
+          const newP = `${moisNoms[m]} ${y}`;
+          // Mettre à jour options de période si absent
+          let exists = false;
+          for (let i = 0; i < selPeriode.options.length; i++) {
+            if (selPeriode.options[i].value === newP) { exists = true; break; }
+          }
+          if (!exists) {
+            const opt = document.createElement('option');
+            opt.value = newP;
+            opt.textContent = newP;
+            selPeriode.appendChild(opt);
+          }
+          syncPeriodChange(newP);
+        }
+      };
+      selAnnee.onchange = handleMonthYearChange;
+      selMois.onchange = handleMonthYearChange;
+    }
+
+    if (selPeriode) {
+      selPeriode.onchange = (e) => syncPeriodChange(e.target.value);
+    }
+    if (selValPeriode) {
+      selValPeriode.onchange = (e) => syncPeriodChange(e.target.value);
+    }
+
+    // 4. Initialisation des sections
+    renderPayrollCalcSection();
+    renderPayrollValidationSection();
+    renderCongoPaymentForm();
+    renderPayrollVentilation();
+  }
+
+  // Section 1 : Calcul de la paie
+  function renderPayrollCalcSection() {
+    const tbody = document.getElementById('payroll-calc-results-tbody');
+    const activeCountEl = document.getElementById('payroll-active-emp-count');
+    const masseSumEl = document.getElementById('payroll-active-masse-sum');
+    const resultsCountEl = document.getElementById('payroll-results-count');
+    const periodBadge = document.getElementById('payroll-period-badge-status');
+    const periodStatusText = document.getElementById('payroll-active-period-status-text');
+
+    if (!tbody) return;
+
+    // Filtres type de contrat
+    const filterPills = document.querySelectorAll('#payroll-contract-filters .payroll-pill');
+    filterPills.forEach(pill => {
+      pill.onclick = () => {
+        filterPills.forEach(p => p.classList.toggle('active', p === pill));
+        AppState.payrollContractFilter = pill.getAttribute('data-contract') || 'Tous';
+        renderPayrollCalcSection();
+      };
+    });
+
+    // Mode Global vs Individuel
+    const radioGlobal = document.getElementById('payroll-scope-global');
+    const radioIndiv = document.getElementById('payroll-scope-individual');
+    const indivBox = document.getElementById('payroll-individual-agent-box');
+    const indivSelect = document.getElementById('payroll-individual-agent-select');
+
+    if (radioGlobal && radioIndiv && indivBox) {
+      radioGlobal.onchange = () => {
+        AppState.payrollScope = 'global';
+        indivBox.style.display = 'none';
+        const ctaBtnText = document.getElementById('btn-trigger-calc-text');
+        if (ctaBtnText) ctaBtnText.textContent = 'Lancer le calcul global';
+      };
+      radioIndiv.onchange = () => {
+        AppState.payrollScope = 'individual';
+        indivBox.style.display = 'block';
+        const ctaBtnText = document.getElementById('btn-trigger-calc-text');
+        if (ctaBtnText) ctaBtnText.textContent = 'Calculer le bulletin sélectionné';
+      };
+    }
+
+    // Remplir le sélecteur d'agent individuel
+    if (indivSelect && indivSelect.options.length <= 1) {
+      indivSelect.innerHTML = (MockData.employees || []).map(emp => `
+        <option value="${escapeHtml(emp.matricule)}">
+          ${escapeHtml(emp.nom)} - ${escapeHtml(emp.matricule)} (${escapeHtml(emp.direction)} - ${escapeHtml(emp.grade)})
+        </option>
+      `).join('');
+      indivSelect.onchange = (e) => {
+        AppState.payrollIndividualMatricule = e.target.value;
+      };
+      if (!AppState.payrollIndividualMatricule && MockData.employees.length > 0) {
+        AppState.payrollIndividualMatricule = MockData.employees[0].matricule;
+      }
+    }
+
+    // Filtrer la liste des agents
+    let list = (MockData.employees || []).filter(emp => {
+      if (AppState.payrollContractFilter === 'Tous') return true;
+      if (AppState.payrollContractFilter === 'Stagiaires') return emp.statut === 'Stagiaire';
+      if (AppState.payrollContractFilter === 'CDD') return emp.statut === 'Contractuel (CDD)' || (emp.grade && emp.grade.includes('CDD'));
+      if (AppState.payrollContractFilter === 'CDI') return emp.statut === 'Contractuel (CDI)' || (emp.grade && emp.grade.includes('CDI'));
+      if (AppState.payrollContractFilter === 'Fonctionnaires') return emp.statut === 'Titulaire' || emp.statut === 'Fonctionnaire';
+      return true;
+    });
+
+    // Mettre à jour les statistiques
+    let totalMasse = 0;
+    list.forEach(emp => {
+      const pslip = MockData.payslips.find(p => p.matricule === emp.matricule);
+      const net = pslip ? pslip.net : (emp.salaireBase ? Math.round(emp.salaireBase * 0.85) : 320000);
+      totalMasse += net;
+    });
+
+    if (activeCountEl) activeCountEl.textContent = list.length;
+    if (masseSumEl) masseSumEl.textContent = formatCurrency(totalMasse);
+    if (resultsCountEl) resultsCountEl.textContent = list.length;
+
+    // Statut de la période
+    const isCalculated = AppState.payrollStatus === 'CALCULÉE' || AppState.payrollStatus === 'VALIDÉE';
+    if (periodBadge) {
+      periodBadge.textContent = AppState.payrollStatus;
+      if (AppState.payrollStatus === 'VALIDÉE') {
+        periodBadge.style.background = '#ECFDF5';
+        periodBadge.style.color = '#065F46';
+        periodBadge.style.borderColor = '#A7F3D0';
+      } else if (AppState.payrollStatus === 'CALCULÉE') {
+        periodBadge.style.background = '#EFF6FF';
+        periodBadge.style.color = '#1E40AF';
+        periodBadge.style.borderColor = '#BFDBFE';
+      } else {
+        periodBadge.style.background = '#ECFDF5';
+        periodBadge.style.color = '#065F46';
+        periodBadge.style.borderColor = '#A7F3D0';
+      }
+    }
+    if (periodStatusText) {
+      periodStatusText.textContent = AppState.payrollStatus;
+      periodStatusText.style.color = AppState.payrollStatus === 'VALIDÉE' ? '#059669' : (AppState.payrollStatus === 'CALCULÉE' ? '#2563EB' : '#059669');
+    }
+
+    // Rendu du tableau
+    tbody.innerHTML = list.map(emp => {
+      const pslip = MockData.payslips.find(p => p.matricule === emp.matricule);
+      const brut = pslip ? pslip.brut : (emp.salaireBase || 380000);
+      const net = pslip ? pslip.net : Math.round(brut * 0.82);
+      const retenues = brut - net;
+      const isCalculatedAgent = AppState.payrollCalculatedSlips[emp.matricule] || isCalculated;
+
+      let statusBadge = isCalculatedAgent 
+        ? `<span class="acpe-badge" style="background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE;">Calculé</span>`
+        : `<span class="acpe-badge" style="background:#FEF3C7; color:#92400E; border:1px solid #FDE68A;">À calculer</span>`;
+
+      return `
+        <tr>
+          <td><code style="font-size:12px; font-weight:700; color:var(--color-primary);">${escapeHtml(emp.matricule)}</code></td>
+          <td>
+            <strong style="color:var(--color-text-main);">${escapeHtml(emp.nom)}</strong>
+            <span style="display:block; font-size:11px; color:var(--color-text-muted);">${escapeHtml(emp.grade)}</span>
+          </td>
+          <td>${escapeHtml(emp.direction)}</td>
+          <td><span class="acpe-badge" style="background:#F1F5F9; color:#475569;">${escapeHtml(emp.statut)}</span></td>
+          <td style="font-weight:600;">${formatCurrency(brut)}</td>
+          <td style="color:#DC2626; font-size:12px;">-${formatCurrency(retenues)}</td>
+          <td style="font-weight:700; color:var(--color-primary); font-size:14px;">${formatCurrency(net)}</td>
+          <td>${statusBadge}</td>
+          <td style="text-align:right;">
+            <div style="display:inline-flex; gap:6px;">
+              <button type="button" class="btn-secondary btn-sm btn-action-view-slip" data-mat="${escapeHtml(emp.matricule)}" title="Consulter le bulletin officiel">
+                Bulletin
+              </button>
+              <button type="button" class="btn-secondary btn-sm btn-action-recalc-slip" data-mat="${escapeHtml(emp.matricule)}" title="Recalculer individuellement">
+                Recalculer
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    // Événements sur les lignes
+    tbody.querySelectorAll('.btn-action-view-slip').forEach(btn => {
+      btn.onclick = () => {
+        const mat = btn.getAttribute('data-mat');
+        if (mat) openPayslipModal(mat);
+      };
+    });
+
+    tbody.querySelectorAll('.btn-action-recalc-slip').forEach(btn => {
+      btn.onclick = () => {
+        const mat = btn.getAttribute('data-mat');
+        const emp = MockData.employees.find(e => e.matricule === mat);
+        if (!emp) return;
+        btn.textContent = 'Calcul...';
+        setTimeout(() => {
+          AppState.payrollCalculatedSlips[mat] = true;
+          showToast(`Bulletin individuel de ${emp.nom} (${mat}) recalculé avec succès.`);
+          renderPayrollCalcSection();
+        }, 500);
+      };
+    });
+
+    // Gestionnaire du bouton "Lancer le calcul"
+    const triggerBtn = document.getElementById('btn-trigger-payroll-calc');
+    if (triggerBtn) {
+      triggerBtn.onclick = () => {
+        if (AppState.payrollScope === 'global') {
+          triggerBtn.disabled = true;
+          triggerBtn.innerHTML = `
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin" style="animation: spin 1s linear infinite;">
+              <circle cx="12" cy="12" r="10"></circle>
+            </svg>
+            <span>Calcul indiciaire global en cours...</span>
+          `;
+
+          showToast(`Lancement du calcul global pour la période ${AppState.payrollPeriod} (application de la valeur du point & barèmes EPA)...`);
+
+          setTimeout(() => {
+            list.forEach(emp => {
+              AppState.payrollCalculatedSlips[emp.matricule] = true;
+            });
+            AppState.payrollStatus = 'CALCULÉE';
+
+            triggerBtn.disabled = false;
+            triggerBtn.innerHTML = `
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="4" y="2" width="16" height="20" rx="2"></rect>
+                <line x1="8" y1="6" x2="16" y2="6"></line>
+                <line x1="8" y1="10" x2="16" y2="10"></line>
+                <line x1="8" y1="14" x2="16" y2="14"></line>
+                <line x1="8" y1="18" x2="16" y2="18"></line>
+              </svg>
+              <span>Lancer le calcul</span>
+            `;
+
+            showToast(`Calcul global de la paie terminé : ${list.length} agents traités, masse nette totale ${formatCurrency(totalMasse)}.`);
+            renderPayrollCalcSection();
+            renderPayrollValidationSection();
+          }, 1200);
+
+        } else {
+          // Calcul individuel
+          const mat = AppState.payrollIndividualMatricule;
+          const emp = MockData.employees.find(e => e.matricule === mat);
+          if (!emp) {
+            showToast('Veuillez sélectionner un agent à calculer.');
+            return;
+          }
+
+          triggerBtn.disabled = true;
+          triggerBtn.innerHTML = `
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;">
+              <circle cx="12" cy="12" r="10"></circle>
+            </svg>
+            <span>Calcul individuel en cours...</span>
+          `;
+
+          setTimeout(() => {
+            AppState.payrollCalculatedSlips[mat] = true;
+            triggerBtn.disabled = false;
+            triggerBtn.innerHTML = `
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="4" y="2" width="16" height="20" rx="2"></rect>
+                <line x1="8" y1="6" x2="16" y2="6"></line>
+                <line x1="8" y1="10" x2="16" y2="10"></line>
+                <line x1="8" y1="14" x2="16" y2="14"></line>
+                <line x1="8" y1="18" x2="16" y2="18"></line>
+              </svg>
+              <span>Calculer le bulletin sélectionné</span>
+            `;
+
+            showToast(`Calcul individuel achevé pour l'agent ${emp.nom} (${mat}). Prêt pour validation.`);
+            renderPayrollCalcSection();
+          }, 800);
+        }
+      };
+    }
+  }
+
+  // Section 2 : Validation de la paie
+  function renderPayrollValidationSection() {
+    const tbody = document.getElementById('tbody-validation-slips');
+    const toValidateCountEl = document.getElementById('val-count-to-validate');
+    const statusTextEl = document.getElementById('val-period-status-text');
+    const statusBadgeEl = document.getElementById('val-period-status-badge');
+    const checkAll = document.getElementById('check-all-val');
+
+    if (!tbody) return;
+
+    const employees = MockData.employees || [];
+    let pendingCount = 0;
+
+    employees.forEach(emp => {
+      if (!AppState.payrollValidatedSlips.has(emp.matricule)) {
+        pendingCount++;
+      }
+    });
+
+    if (toValidateCountEl) toValidateCountEl.textContent = pendingCount;
+    if (statusTextEl) {
+      statusTextEl.textContent = pendingCount === 0 ? 'VALIDÉE' : (AppState.payrollStatus || 'OUVERTE');
+      statusTextEl.style.color = pendingCount === 0 ? '#059669' : '#D97706';
+    }
+    if (statusBadgeEl) {
+      statusBadgeEl.textContent = pendingCount === 0 ? 'VALIDÉE' : (AppState.payrollStatus || 'OUVERTE');
+      if (pendingCount === 0) {
+        statusBadgeEl.style.background = '#ECFDF5';
+        statusBadgeEl.style.color = '#065F46';
+        statusBadgeEl.style.borderColor = '#A7F3D0';
+      }
+    }
+
+    tbody.innerHTML = employees.map(emp => {
+      const pslip = MockData.payslips.find(p => p.matricule === emp.matricule);
+      const brut = pslip ? pslip.brut : (emp.salaireBase || 380000);
+      const net = pslip ? pslip.net : Math.round(brut * 0.82);
+      const isValidated = AppState.payrollValidatedSlips.has(emp.matricule);
+
+      let valBadge = isValidated
+        ? `<span class="acpe-badge" style="background:#ECFDF5; color:#065F46; border:1px solid #A7F3D0;">Validé</span>`
+        : `<span class="acpe-badge" style="background:#FEF3C7; color:#92400E; border:1px solid #FDE68A;">À valider</span>`;
+
+      let actionBtn = isValidated
+        ? `<button type="button" class="btn-secondary btn-sm btn-val-view-slip" data-mat="${escapeHtml(emp.matricule)}">Voir bulletin</button>`
+        : `<button type="button" class="btn-primary btn-sm btn-val-single" data-mat="${escapeHtml(emp.matricule)}" style="background:#0F172A; color:#FFFFFF;">Valider</button>`;
+
+      return `
+        <tr>
+          <td><input type="checkbox" class="check-val-row" data-mat="${escapeHtml(emp.matricule)}" ${isValidated ? 'disabled' : ''} /></td>
+          <td><code style="font-size:12px; font-weight:700; color:var(--color-primary);">${escapeHtml(emp.matricule)}</code></td>
+          <td>
+            <strong style="color:var(--color-text-main);">${escapeHtml(emp.nom)}</strong>
+            <span style="display:block; font-size:11px; color:var(--color-text-muted);">${escapeHtml(emp.grade)}</span>
+          </td>
+          <td>${escapeHtml(emp.direction)}</td>
+          <td style="font-weight:600;">${formatCurrency(brut)}</td>
+          <td style="font-weight:700; color:var(--color-primary); font-size:14px;">${formatCurrency(net)}</td>
+          <td>${valBadge}</td>
+          <td style="text-align:right;">${actionBtn}</td>
+        </tr>
+      `;
+    }).join('');
+
+    // Check all checkbox
+    if (checkAll) {
+      checkAll.checked = false;
+      checkAll.onchange = () => {
+        tbody.querySelectorAll('.check-val-row:not(:disabled)').forEach(cb => {
+          cb.checked = checkAll.checked;
+        });
+      };
+    }
+
+    // Single validate button
+    tbody.querySelectorAll('.btn-val-single').forEach(btn => {
+      btn.onclick = () => {
+        const mat = btn.getAttribute('data-mat');
+        if (!mat) return;
+        AppState.payrollValidatedSlips.add(mat);
+        const emp = MockData.employees.find(e => e.matricule === mat);
+        showToast(`Traitement de ${emp ? emp.nom : mat} validé avec succès.`);
+        renderPayrollValidationSection();
+      };
+    });
+
+    tbody.querySelectorAll('.btn-val-view-slip').forEach(btn => {
+      btn.onclick = () => {
+        const mat = btn.getAttribute('data-mat');
+        if (mat) openPayslipModal(mat);
+      };
+    });
+
+    // Bouton "Valider tous"
+    const btnValAll = document.getElementById('btn-val-all-slips');
+    if (btnValAll) {
+      btnValAll.onclick = () => {
+        employees.forEach(emp => {
+          AppState.payrollValidatedSlips.add(emp.matricule);
+        });
+        AppState.payrollStatus = 'VALIDÉE';
+        showToast(`Tous les ${employees.length} bulletins de salaire pour ${AppState.payrollPeriod} ont été validés.`);
+        renderPayrollValidationSection();
+        renderPayrollCalcSection();
+      };
+    }
+
+    // Bouton "Générer bulletins"
+    const btnGenBulletins = document.getElementById('btn-generate-all-payslips');
+    if (btnGenBulletins) {
+      btnGenBulletins.onclick = () => {
+        showToast(`Génération automatique de l'ensemble des bulletins de paie ACPE pour la période ${AppState.payrollPeriod}.`);
+        if (employees.length > 0) {
+          setTimeout(() => openPayslipModal(employees[0].matricule), 600);
+        }
+      };
+    }
+  }
+
+  // Section 3 : Formulaire de Paiement - République du Congo
+  function renderCongoPaymentForm() {
+    const deptSelect = document.getElementById('congo-pay-dept');
+    const villeSelect = document.getElementById('congo-pay-ville');
+    const methodeSelect = document.getElementById('congo-pay-methode');
+    const banqueSelect = document.getElementById('congo-pay-banque');
+    const banqueLabel = document.getElementById('congo-pay-banque-label');
+    const agentSelect = document.getElementById('congo-pay-agent');
+    const numeroInput = document.getElementById('congo-pay-numero');
+    const numeroLabel = document.getElementById('congo-pay-numero-label');
+    const montantInput = document.getElementById('congo-pay-montant');
+    const form = document.getElementById('form-congo-payroll-payment');
+    const btnCancel = document.getElementById('btn-cancel-congo-payment');
+
+    if (!form || !deptSelect || !villeSelect || !methodeSelect || !banqueSelect || !agentSelect) return;
+
+    // 1. Remplissage des départements
+    if (deptSelect.options.length <= 1) {
+      deptSelect.innerHTML = `<option value="">-- Sélectionner un département --</option>` +
+        Object.keys(CONGO_DATA.departments).map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('');
+    }
+
+    // Événement changement de département -> Mise à jour des villes et chefs-lieux
+    deptSelect.onchange = () => {
+      const selectedDept = deptSelect.value;
+      if (!selectedDept || !CONGO_DATA.departments[selectedDept]) {
+        villeSelect.innerHTML = `<option value="">-- Sélectionner un département d'abord --</option>`;
+        return;
+      }
+      const deptInfo = CONGO_DATA.departments[selectedDept];
+      villeSelect.innerHTML = `<option value="">-- Sélectionner une ville / chef-lieu --</option>` +
+        deptInfo.villes.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+    };
+
+    // 2. Gestion des méthodes de paiement et adaptation dynamique des labels et banques
+    function updatePaymentMethodOptions() {
+      const methode = methodeSelect.value;
+      if (methode.includes('Virement')) {
+        if (banqueLabel) banqueLabel.textContent = 'BANQUE COMMERCIALE (RÉPUBLIQUE DU CONGO)';
+        if (numeroLabel) numeroLabel.textContent = 'NUMÉRO DE COMPTE (RIB / IBAN CONGO)';
+        if (numeroInput) numeroInput.placeholder = 'CG012 00000 00000000000 00';
+        banqueSelect.innerHTML = `<option value="">-- Sélectionner une banque --</option>` +
+          CONGO_DATA.banks.map(b => `<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`).join('');
+      } else if (methode.includes('Remise à la main') || methode.includes('Espèces')) {
+        if (banqueLabel) banqueLabel.textContent = 'CAISSE DU TRÉSOR / BILLETTERIE ACPE';
+        if (numeroLabel) numeroLabel.textContent = 'NUMÉRO DE BON DE CAISSE / QUITTANCE';
+        if (numeroInput) numeroInput.placeholder = 'BON-TR-CG-2026-XXXX';
+        banqueSelect.innerHTML = `<option value="">-- Sélectionner une caisse ou billetterie --</option>` +
+          CONGO_DATA.cashOutlets.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+      } else if (methode.includes('Mobile Money')) {
+        if (banqueLabel) banqueLabel.textContent = 'OPÉRATEUR MOBILE MONEY CONGO';
+        if (numeroLabel) numeroLabel.textContent = 'NUMÉRO DE TÉLÉPHONE MOBILE';
+        if (numeroInput) numeroInput.placeholder = '06 XXX XX XX ou 05 XXX XX XX';
+        banqueSelect.innerHTML = `<option value="">-- Sélectionner un opérateur --</option>` +
+          CONGO_DATA.momoOperators.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+      } else if (methode.includes('Carte Bancaire')) {
+        if (banqueLabel) banqueLabel.textContent = 'TYPE DE CARTE BANCAIRE';
+        if (numeroLabel) numeroLabel.textContent = 'NUMÉRO DE CARTE (16 CHIFFRES)';
+        if (numeroInput) numeroInput.placeholder = '4XXX XXXX XXXX XXXX';
+        banqueSelect.innerHTML = `<option value="">-- Sélectionner une carte --</option>` +
+          CONGO_DATA.cardTypes.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+      }
+    }
+
+    methodeSelect.onchange = updatePaymentMethodOptions;
+    updatePaymentMethodOptions();
+
+    // 3. Remplissage de la liste des agents
+    if (agentSelect.options.length <= 1) {
+      agentSelect.innerHTML = `<option value="">-- Sélectionner un agent public dans le registre --</option>` +
+        (MockData.employees || []).map(emp => `
+          <option value="${escapeHtml(emp.matricule)}">
+            ${escapeHtml(emp.nom)} (${escapeHtml(emp.matricule)} - ${escapeHtml(emp.direction)})
+          </option>
+        `).join('');
+    }
+
+    // Auto-remplissage lors de la sélection d'un agent
+    agentSelect.onchange = () => {
+      const mat = agentSelect.value;
+      if (!mat) return;
+      const emp = (MockData.employees || []).find(e => e.matricule === mat);
+      const paymentInfo = (AppState.congoPayments || []).find(p => p.matricule === mat);
+      const pslip = (MockData.payslips || []).find(p => p.matricule === mat);
+
+      if (paymentInfo) {
+        if (deptSelect) {
+          deptSelect.value = paymentInfo.departement;
+          deptSelect.onchange();
+          if (villeSelect) villeSelect.value = paymentInfo.ville;
+        }
+        if (methodeSelect) {
+          methodeSelect.value = paymentInfo.methode;
+          updatePaymentMethodOptions();
+          if (banqueSelect) banqueSelect.value = paymentInfo.etablissement;
+        }
+        if (numeroInput) numeroInput.value = paymentInfo.numero;
+        if (montantInput) montantInput.value = `XAF ${new Intl.NumberFormat('fr-FR').format(paymentInfo.montant)}`;
+      } else if (emp) {
+        const net = pslip ? pslip.net : Math.round((emp.salaireBase || 350000) * 0.85);
+        if (montantInput) montantInput.value = `XAF ${new Intl.NumberFormat('fr-FR').format(net)}`;
+      }
+    };
+
+    // 4. Soumission du formulaire de paiement
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      const mat = agentSelect.value;
+      const emp = (MockData.employees || []).find(e => e.matricule === mat);
+      if (!emp) {
+        showToast('Veuillez sélectionner un agent bénéficiaire.');
+        return;
+      }
+
+      const rawMontant = montantInput.value.replace(/[^0-9]/g, '');
+      const montantNum = parseInt(rawMontant, 10) || 0;
+
+      if (montantNum <= 0) {
+        showToast('Veuillez saisir un montant valide en Francs CFA.');
+        return;
+      }
+
+      // Mise à jour ou ajout dans AppState.congoPayments
+      let existing = (AppState.congoPayments || []).find(p => p.matricule === mat);
+      if (existing) {
+        existing.departement = deptSelect.value;
+        existing.ville = villeSelect.value;
+        existing.methode = methodeSelect.value;
+        existing.etablissement = banqueSelect.value;
+        existing.numero = numeroInput.value;
+        existing.montant = montantNum;
+        existing.statut = 'Payé';
+      } else {
+        AppState.congoPayments.push({
+          id: `PAY-CG-${String(AppState.congoPayments.length + 1).padStart(3, '0')}`,
+          matricule: mat,
+          agent: emp.nom,
+          direction: emp.direction,
+          departement: deptSelect.value,
+          ville: villeSelect.value,
+          methode: methodeSelect.value,
+          etablissement: banqueSelect.value,
+          numero: numeroInput.value,
+          montant: montantNum,
+          statut: 'Payé',
+          date: '15/09/2026'
+        });
+      }
+
+      showToast(`Paiement de ${formatCurrency(montantNum)} ordonnancé avec succès pour ${emp.nom} via ${banqueSelect.value} (${deptSelect.value}) !`);
+
+      // Rafraîchir les ventilations
+      renderPayrollVentilation();
+
+      // Basculer vers l'onglet ventilation pour voir l'impact
+      const ventTab = document.querySelector('.payroll-tab-btn[data-tab="ventilation-masse"]');
+      if (ventTab) ventTab.click();
+    };
+
+    if (btnCancel) {
+      btnCancel.onclick = () => {
+        form.reset();
+        villeSelect.innerHTML = `<option value="">-- Sélectionner un département d'abord --</option>`;
+        updatePaymentMethodOptions();
+        showToast('Formulaire de paiement réinitialisé.');
+      };
+    }
+  }
+
+  // Section 4 : Ventilation de la masse salariale & Filtres Banques / MoMo / Cartes / Espèces
+  function renderPayrollVentilation() {
+    initCongoPayments();
+
+    const payments = AppState.congoPayments || [];
+
+    // 1. Calcul des totaux par canal
+    let sumVirement = 0, countVirement = 0;
+    let sumMomo = 0, countMomo = 0;
+    let sumCarte = 0, countCarte = 0;
+    let sumEspeces = 0, countEspeces = 0;
+
+    payments.forEach(p => {
+      const m = p.methode || '';
+      if (m.includes('Virement')) {
+        sumVirement += p.montant;
+        countVirement++;
+      } else if (m.includes('Mobile Money')) {
+        sumMomo += p.montant;
+        countMomo++;
+      } else if (m.includes('Carte Bancaire')) {
+        sumCarte += p.montant;
+        countCarte++;
+      } else if (m.includes('Espèces') || m.includes('Remise')) {
+        sumEspeces += p.montant;
+        countEspeces++;
+      }
+    });
+
+    const sumVirEl = document.getElementById('channel-sum-virement');
+    const cntVirEl = document.getElementById('channel-count-virement');
+    const sumMomoEl = document.getElementById('channel-sum-momo');
+    const cntMomoEl = document.getElementById('channel-count-momo');
+    const sumCarteEl = document.getElementById('channel-sum-carte');
+    const cntCarteEl = document.getElementById('channel-count-carte');
+    const sumEspEl = document.getElementById('channel-sum-especes');
+    const cntEspEl = document.getElementById('channel-count-especes');
+
+    if (sumVirEl) sumVirEl.textContent = formatCurrency(sumVirement);
+    if (cntVirEl) cntVirEl.textContent = `${countVirement} agents`;
+    if (sumMomoEl) sumMomoEl.textContent = formatCurrency(sumMomo);
+    if (cntMomoEl) cntMomoEl.textContent = `${countMomo} agents`;
+    if (sumCarteEl) sumCarteEl.textContent = formatCurrency(sumCarte);
+    if (cntCarteEl) cntCarteEl.textContent = `${countCarte} agents`;
+    if (sumEspEl) sumEspEl.textContent = formatCurrency(sumEspeces);
+    if (cntEspEl) cntEspEl.textContent = `${countEspeces} agents`;
+
+    // 2. Remplissage des options du filtre Banque
+    const filterBankSelect = document.getElementById('filter-channel-bank');
+    if (filterBankSelect && filterBankSelect.options.length <= 1) {
+      const uniqueBanks = Array.from(new Set(payments.map(p => p.etablissement))).sort();
+      filterBankSelect.innerHTML = `<option value="all">Toutes les banques & caisses</option>` +
+        uniqueBanks.map(b => `<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`).join('');
+    }
+
+    // 3. Application des filtres interactifs
+    const filterModeSelect = document.getElementById('filter-channel-mode');
+    const filterDeptSelect = document.getElementById('filter-channel-dept');
+    const filterSearchInput = document.getElementById('filter-channel-search');
+    const tbody = document.getElementById('tbody-channel-payments');
+    const countBadge = document.getElementById('filtered-payroll-count');
+
+    if (!tbody) return;
+
+    function applyChannelFilters() {
+      const mode = filterModeSelect ? filterModeSelect.value : 'all';
+      const bank = filterBankSelect ? filterBankSelect.value : 'all';
+      const dept = filterDeptSelect ? filterDeptSelect.value : 'all';
+      const q = filterSearchInput ? filterSearchInput.value.trim().toLowerCase() : '';
+
+      let filtered = payments.filter(p => {
+        if (mode !== 'all' && !p.methode.includes(mode)) return false;
+        if (bank !== 'all' && p.etablissement !== bank) return false;
+        if (dept !== 'all' && p.departement !== dept) return false;
+        if (q) {
+          const matchName = (p.agent || '').toLowerCase().includes(q);
+          const matchMat = (p.matricule || '').toLowerCase().includes(q);
+          const matchBank = (p.etablissement || '').toLowerCase().includes(q);
+          if (!matchName && !matchMat && !matchBank) return false;
+        }
+        return true;
+      });
+
+      let sumFiltered = filtered.reduce((acc, p) => acc + p.montant, 0);
+
+      if (countBadge) {
+        countBadge.textContent = `Affichage : ${filtered.length} agents • ${formatCurrency(sumFiltered)}`;
+      }
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="9" style="text-align:center; padding:32px; color:var(--color-text-muted);">
+              Aucun règlement salarial ne correspond aux critères de recherche sélectionnés.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(p => {
+        let modeBadge = '';
+        if (p.methode.includes('Virement')) {
+          modeBadge = `<span class="acpe-badge" style="background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE;">Virement Bancaire</span>`;
+        } else if (p.methode.includes('Mobile Money')) {
+          modeBadge = `<span class="acpe-badge" style="background:#FEF3C7; color:#D97706; border:1px solid #FDE68A;">Mobile Money</span>`;
+        } else if (p.methode.includes('Carte Bancaire')) {
+          modeBadge = `<span class="acpe-badge" style="background:#ECFDF5; color:#059669; border:1px solid #A7F3D0;">Carte Bancaire</span>`;
+        } else {
+          modeBadge = `<span class="acpe-badge" style="background:#F5F3FF; color:#7C3AED; border:1px solid #DDD6FE;">Espèces / Main</span>`;
+        }
+
+        let statutBadge = p.statut === 'Payé'
+          ? `<span class="acpe-badge" style="background:#ECFDF5; color:#065F46;">Payé</span>`
+          : `<span class="acpe-badge" style="background:#EFF6FF; color:#1E40AF;">Ordonnancé</span>`;
+
+        return `
+          <tr>
+            <td><code style="font-size:12px; font-weight:700; color:var(--color-primary);">${escapeHtml(p.matricule)}</code></td>
+            <td>
+              <strong style="color:var(--color-text-main);">${escapeHtml(p.agent)}</strong>
+              <span style="display:block; font-size:11px; color:var(--color-text-muted);">${escapeHtml(p.direction)}</span>
+            </td>
+            <td>${modeBadge}</td>
+            <td><strong>${escapeHtml(p.etablissement)}</strong></td>
+            <td><code style="font-size:11px; color:#475569;">${escapeHtml(p.numero)}</code></td>
+            <td>
+              <span style="font-size:12px; font-weight:600; color:var(--color-text-main);">${escapeHtml(p.departement)}</span>
+              <span style="display:block; font-size:11px; color:var(--color-text-muted);">${escapeHtml(p.ville)}</span>
+            </td>
+            <td style="font-weight:700; color:var(--color-primary); font-size:14px;">${formatCurrency(p.montant)}</td>
+            <td>${statutBadge}</td>
+            <td style="text-align:right;">
+              <button type="button" class="btn-secondary btn-sm btn-view-channel-slip" data-mat="${escapeHtml(p.matricule)}" title="Consulter le bulletin de cet agent">
+                Bulletin
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      tbody.querySelectorAll('.btn-view-channel-slip').forEach(btn => {
+        btn.onclick = () => {
+          const mat = btn.getAttribute('data-mat');
+          if (mat) openPayslipModal(mat);
+        };
+      });
+    }
+
+    if (filterModeSelect) filterModeSelect.onchange = applyChannelFilters;
+    if (filterBankSelect) filterBankSelect.onchange = applyChannelFilters;
+    if (filterDeptSelect) filterDeptSelect.onchange = applyChannelFilters;
+    if (filterSearchInput) {
+      filterSearchInput.oninput = () => {
+        applyChannelFilters();
+      };
+    }
+
+    applyChannelFilters();
+  }
+
   // Modale Nouveau Contrat
   function openAddContractModal() {
     const modal = document.getElementById('add-contract-modal');
@@ -2613,6 +3613,56 @@
     }
   }
 
+  // Modale Fiche Statutaire Agent Public
+  function openAgentDetailModal(matricule) {
+    const modal = document.getElementById('agent-detail-modal');
+    const emp = MockData.employees.find(e => e.matricule === matricule);
+    if (!modal || !emp) return;
+
+    AppState.currentSelectedMatricule = matricule;
+
+    const initials = emp.nom.split(' ').map(n => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
+    const avatarEl = document.getElementById('agent-detail-avatar');
+    if (avatarEl) avatarEl.textContent = initials;
+
+    const nomEl = document.getElementById('agent-detail-nom');
+    if (nomEl) nomEl.textContent = emp.nom;
+
+    const gradeEl = document.getElementById('agent-detail-grade');
+    if (gradeEl) gradeEl.textContent = emp.grade;
+
+    const statusBadge = document.getElementById('agent-detail-status-badge');
+    if (statusBadge) {
+      statusBadge.innerHTML = `<span class="acpe-badge">${escapeHtml(emp.statutAgent || 'Titulaire')}</span>`;
+    }
+
+    const matEl = document.getElementById('agent-detail-matricule');
+    if (matEl) matEl.textContent = emp.matricule;
+
+    const dirEl = document.getElementById('agent-detail-direction');
+    if (dirEl) dirEl.textContent = `${emp.direction} (${emp.directionCode || 'EPA'})`;
+
+    const catEl = document.getElementById('agent-detail-cat');
+    if (catEl) catEl.textContent = emp.categorie || 'Catégorie A';
+
+    const indiceEl = document.getElementById('agent-detail-indice');
+    if (indiceEl) indiceEl.textContent = emp.indice || emp.echelon || '620';
+
+    const netEl = document.getElementById('agent-detail-net');
+    if (netEl) netEl.textContent = formatCurrency(emp.traitementNet);
+
+    modal.classList.add('active');
+    modal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeAgentDetailModal() {
+    const modal = document.getElementById('agent-detail-modal');
+    if (modal) {
+      modal.classList.remove('active');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+  }
+
   /* --------------------------------------------------------------------------
      8. GESTION DU BULLETIN DE PAIE OFFICIEL ACPE (RÉFÉRENCE BULLETIN_TEMPLATE.HTML)
      -------------------------------------------------------------------------- */
@@ -2769,7 +3819,9 @@
 
   function fmt(n) {
     if (n === undefined || n === null || n === '') return '';
-    return Number(n).toLocaleString('fr-FR', { maximumFractionDigits: 2 });
+    const num = typeof n === 'string' ? parseFloat(n.replace(/\s/g, '').replace(',', '.')) : Number(n);
+    if (isNaN(num)) return String(n);
+    return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
   }
 
   function renderBulletinHtml(d) {
@@ -2779,18 +3831,27 @@
 
     return `
       <div class="acpe-bulletin-wrapper" id="bulletin-sheet-${escapeHtml(e.matricule)}">
-        <div style="text-align: center; margin-bottom: 8px;">
-          <img src="/acpe-logo.png" alt="Logo Officiel ACPE" class="acpe-bulletin-logo" />
-          <h1>ACPE</h1>
-          <div class="subtitle"><strong>BULLETIN DE SALAIRE</strong> — <span>${escapeHtml(d.periode.mois)} ${escapeHtml(d.periode.annee)}</span></div>
-          <div class="period">Période du ${escapeHtml(d.periode.debut)} au ${escapeHtml(d.periode.fin)}</div>
-          <div class="address">Avenue Edith Lucie Bongo Ondimba, zone industrielle de Mpila | BP: 2006 - République du Congo</div>
+        <!-- En-tête officiel du bulletin : Logo à gauche et Mois & Période à droite (ne touche pas) -->
+        <div class="acpe-bulletin-header-box" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1F4E79; padding-bottom: 12px; margin-bottom: 12px;">
+          <div style="display: flex; align-items: center; justify-content: flex-start;">
+            <img src="/acpe-logo.png" alt="Logo" style="height: 52px; max-width: 170px; object-fit: contain;" onerror="this.style.display='none'" />
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 13.5px; font-weight: 700; color: #111827;">${escapeHtml(d.periode.mois)} ${escapeHtml(d.periode.annee)}</div>
+            <div style="font-size: 10.5px; color: #4B5563; margin-top: 2px;">Période du ${escapeHtml(d.periode.debut)} au ${escapeHtml(d.periode.fin)}</div>
+          </div>
+        </div>
+
+        <!-- Titre "BULLETIN DE PAIE" baissé au centre (avec adresse) -->
+        <div class="acpe-bulletin-title-block" style="text-align: center; margin-top: 18px; margin-bottom: 16px;">
+          <div style="font-size: 18px; font-weight: 800; color: #1F4E79; letter-spacing: 0.8px;">BULLETIN DE PAIE</div>
+          <div style="font-size: 9.5px; color: #4B5563; margin-top: 4px; line-height: 1.35;">Avenue Edith Lucie Bongo Ondimba, zone industrielle de Mpila | BP: 2006, Brazzaville (République du Congo)</div>
         </div>
 
         <div class="infoBlock">
           <table>
             <tr>
-              <td class="label">Nom(s) et Prénom(s)</td><td class="bold">${escapeHtml(e.nom || '—')}</td>
+              <td class="label">Nom(s) et Prénom(s)</td><td class="bold">${escapeHtml(e.nom || '')}</td>
               <td class="label">Localité</td><td>${escapeHtml(e.localite)}</td>
             </tr>
             <tr>
@@ -2825,157 +3886,147 @@
         </div>
 
         <div class="mainTableBlock">
-          <table>
+          <table style="border: 1px solid #CBD5E1; border-collapse: collapse; width: 100%;">
             <thead>
               <tr>
-                <th class="center" style="width: 50px;">N°</th>
-                <th>Désignation</th>
-                <th class="center" style="width: 60px;">Nombre</th>
-                <th class="num" style="width: 85px;">Base</th>
-                <th colspan="3" class="center">Part salariale</th>
-                <th colspan="2" class="center">Part patronale</th>
+                <th rowspan="2" class="center" style="width: 45px; vertical-align: middle; border: 1px solid #94A3B8;">N°</th>
+                <th rowspan="2" style="vertical-align: middle; text-align: left; border: 1px solid #94A3B8;">Désignation</th>
+                <th rowspan="2" class="center" style="width: 55px; vertical-align: middle; border: 1px solid #94A3B8;">Nombre</th>
+                <th rowspan="2" class="num" style="width: 85px; vertical-align: middle; border: 1px solid #94A3B8;">Base</th>
+                <th colspan="3" class="center" style="border: 1px solid #94A3B8;">Part salariale</th>
+                <th colspan="2" class="center" style="border: 1px solid #94A3B8;">Part patronale</th>
               </tr>
               <tr>
-                <th></th><th></th><th></th><th></th>
-                <th class="center" style="width: 50px; font-size: 11px;">Taux</th>
-                <th class="num" style="width: 80px; font-size: 11px;">Gain</th>
-                <th class="num" style="width: 80px; font-size: 11px;">Retenue</th>
-                <th class="center" style="width: 50px; font-size: 11px;">Taux</th>
-                <th class="num" style="width: 80px; font-size: 11px;">Retenue</th>
+                <th class="center" style="width: 50px; font-size: 11px; border: 1px solid #94A3B8;">Taux</th>
+                <th class="num" style="width: 80px; font-size: 11px; border: 1px solid #94A3B8;">Gain</th>
+                <th class="num" style="width: 80px; font-size: 11px; border: 1px solid #94A3B8;">Retenue</th>
+                <th class="center" style="width: 50px; font-size: 11px; border: 1px solid #94A3B8;">Taux</th>
+                <th class="num" style="width: 80px; font-size: 11px; border: 1px solid #94A3B8;">Retenue</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td class="center">1000</td>
-                <td>Salaire de base</td>
-                <td class="num">${r.nombreJours}</td>
-                <td class="num">${fmt(r.tauxJournalier)}</td>
-                <td></td>
-                <td class="num">${fmt(c.salaireBase)}</td>
-                <td></td>
-                <td></td>
-                <td></td>
+                <td class="center" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">1000</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">Salaire de base</td>
+                <td class="center" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">${r.nombreJours || 26}</td>
+                <td class="num" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">${fmt(r.tauxJournalier)}</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td class="num" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">${fmt(c.salaireBase)}</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
               </tr>
               <tr>
-                <td class="center">1020</td>
-                <td>Prime ancienneté</td>
-                <td></td>
-                <td class="num">${fmt(c.salaireBase)}</td>
-                <td class="num">${Math.round(r.tauxAnciennete * 100)}</td>
-                <td class="num">${fmt(c.primeAnciennete)}</td>
-                <td></td>
-                <td></td>
-                <td></td>
+                <td class="center" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">1020</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">Prime ancienneté</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td class="num" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">${fmt(c.salaireBase)}</td>
+                <td class="center" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td class="num" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">${fmt(c.primeAnciennete)}</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
               </tr>
               <tr>
-                <td class="center">1060</td>
-                <td>Indemnité de sujétion</td>
-                <td></td>
-                <td class="num">${fmt(r.indemniteSujetion)}</td>
-                <td></td>
-                <td class="num">${fmt(r.indemniteSujetion)}</td>
-                <td></td>
-                <td></td>
-                <td></td>
+                <td class="center" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">1060</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">Indemnité de sujétion</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td class="num" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">${fmt(r.indemniteSujetion)}</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td class="num" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">${fmt(r.indemniteSujetion)}</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
               </tr>
-              <tr class="bold italic" style="background-color: #F8FAFC;">
-                <td></td>
-                <td>Total Brut</td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td class="num">${fmt(c.totalBrut)}</td>
-                <td></td>
-                <td></td>
-                <td></td>
+              <tr class="bold italic total-row" style="background-color: #F8FAFC;">
+                <td style="border: 1px solid #CBD5E1;"></td>
+                <td colspan="4" style="text-align: left; font-weight: 700; border: 1px solid #CBD5E1;">Total Brut</td>
+                <td class="num" style="font-weight: 700; color: #1F4E79; border: 1px solid #CBD5E1;">${fmt(c.totalBrut)}</td>
+                <td colspan="3" style="border: 1px solid #CBD5E1;"></td>
               </tr>
               <tr>
-                <td class="center">9000</td>
-                <td>Cotisation CNSS (PVID)</td>
-                <td></td>
-                <td class="num">${fmt(r.cnssBasePlafond)}</td>
-                <td class="num">4</td>
-                <td></td>
-                <td class="num">${fmt(c.cnssPvidSal)}</td>
-                <td class="num">8</td>
-                <td class="num">${fmt(c.cnssPvidPat)}</td>
+                <td class="center" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">9000</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">Cotisation CNSS (PVID)</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td class="num" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">${fmt(r.cnssBasePlafond)}</td>
+                <td class="center" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td class="num" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">${fmt(c.cnssPvidSal)}</td>
+                <td class="center" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td class="num" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">${fmt(c.cnssPvidPat)}</td>
               </tr>
               <tr>
-                <td class="center">9001</td>
-                <td>Cotisation CNSS (Plafonné)</td>
-                <td></td>
-                <td class="num">${fmt(r.cnssBasePlafond)}</td>
-                <td class="num">0</td>
-                <td></td>
-                <td class="num">0</td>
-                <td class="num">12</td>
-                <td class="num">${fmt(c.cnssPlafPat)}</td>
+                <td class="center" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">9001</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">Cotisation CNSS (Plafonné)</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td class="num" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">${fmt(r.cnssBasePlafond)}</td>
+                <td class="center" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td class="center" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td class="center" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td class="num" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">${fmt(c.cnssPlafPat)}</td>
               </tr>
               <tr>
-                <td class="center">9002</td>
-                <td>Retenue ITS</td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td class="num">${fmt(c.its)}</td>
-                <td></td>
-                <td></td>
+                <td class="center" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">9002</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">Retenue ITS</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td class="num" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">${fmt(c.netImposable)}</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td class="num" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">${fmt(c.its)}</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
               </tr>
               <tr>
-                <td class="center">9003</td>
-                <td>Retenue Mutuelle (MUTRAPE)</td>
-                <td></td>
-                <td class="num">${fmt(r.mutuelle)}</td>
-                <td></td>
-                <td></td>
-                <td class="num">${fmt(r.mutuelle)}</td>
-                <td></td>
-                <td></td>
+                <td class="center" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">9003</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">Retenue Mutuelle (MUTRAPE)</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td class="num" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">${fmt(r.mutuelle)}</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td class="num" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">${fmt(r.mutuelle)}</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
               </tr>
               <tr>
-                <td class="center">9004</td>
-                <td>MUTRA ACPE</td>
-                <td></td>
-                <td class="num">${fmt(r.mutraAcpe)}</td>
-                <td></td>
-                <td></td>
-                <td class="num">${fmt(r.mutraAcpe)}</td>
-                <td></td>
-                <td></td>
+                <td class="center" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">9004</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">MUTRA ACPE</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td class="num" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">${fmt(r.mutraAcpe)}</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td class="num" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">${fmt(r.mutraAcpe)}</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
               </tr>
-              <tr class="bold italic" style="background-color: #F8FAFC;">
-                <td></td>
-                <td>Total Cotisations</td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td class="num">${fmt(c.totalCotisSalariales)}</td>
-                <td></td>
-                <td class="num">${fmt(c.totalCotisPatronales)}</td>
+              <tr class="bold italic total-row" style="background-color: #F8FAFC;">
+                <td style="border: 1px solid #CBD5E1;"></td>
+                <td colspan="5" style="text-align: left; font-weight: 700; border: 1px solid #CBD5E1;">Total Cotisations</td>
+                <td class="num" style="font-weight: 700; color: #1F4E79; border: 1px solid #CBD5E1;">${fmt(c.totalCotisSalariales)}</td>
+                <td style="border: 1px solid #CBD5E1;"></td>
+                <td class="num" style="font-weight: 700; color: #1F4E79; border: 1px solid #CBD5E1;">${fmt(c.totalCotisPatronales)}</td>
               </tr>
               <tr>
-                <td class="center">4000</td>
-                <td>Indemnité de transport</td>
-                <td></td>
-                <td class="num">${fmt(r.indemniteTransport)}</td>
-                <td></td>
-                <td class="num">${fmt(r.indemniteTransport)}</td>
-                <td></td>
-                <td></td>
-                <td class="num">0</td>
+                <td class="center" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">4000</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">Indemnité de transport</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td class="num" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">${fmt(r.indemniteTransport)}</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td class="num" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">${fmt(r.indemniteTransport)}</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
               </tr>
               <tr>
-                <td class="center">9005</td>
-                <td>Rappel sur les écarts de salaire</td>
-                <td></td>
-                <td class="num">${fmt(r.rappelEcarts)}</td>
-                <td></td>
-                <td class="num">${fmt(r.rappelEcarts)}</td>
-                <td></td>
-                <td></td>
-                <td class="num">0</td>
+                <td class="center" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">9005</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">Rappel sur les écarts de salaire</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td class="num" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">${r.rappelEcarts ? fmt(r.rappelEcarts) : ''}</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td class="num" style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;">${r.rappelEcarts ? fmt(r.rappelEcarts) : ''}</td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
+                <td style="border-top: none; border-bottom: none; border-left: 1px solid #CBD5E1; border-right: 1px solid #CBD5E1;"></td>
               </tr>
             </tbody>
           </table>
@@ -3002,37 +4053,41 @@
                 <td class="num">${fmt(c.totalBrut)}</td>
                 <td class="num">${fmt(c.totalCotisSalariales)}</td>
                 <td class="num">${fmt(c.totalCotisPatronales)}</td>
-                <td class="center">—</td>
+                <td class="center"></td>
                 <td class="num">${fmt(c.netImposable)}</td>
-                <td class="center">173.33</td>
+                <td class="center">173,33</td>
                 <td class="center">0</td>
-                <td class="num bold" style="background: #EBF1F5; color: #1F4E79; font-size: 14px;">${fmt(c.netAPayer)} FCFA</td>
+                <td class="num bold" style="background: #EBF1F5; color: #1F4E79; font-size: 13.5px; white-space: nowrap;">${fmt(c.netAPayer)} FCFA</td>
               </tr>
               <tr>
                 <td class="bold">Années</td>
                 <td class="num">${fmt(d.cumulsAnnee.brut)}</td>
                 <td class="num">${fmt(d.cumulsAnnee.chargesSalariales)}</td>
                 <td class="num">${fmt(d.cumulsAnnee.chargesPatronales)}</td>
-                <td class="center">—</td>
+                <td class="center"></td>
                 <td class="num">${fmt(d.cumulsAnnee.netImposable)}</td>
-                <td class="center">—</td>
-                <td class="center">—</td>
-                <td class="num bold" style="background: #F8FAFC;">—</td>
+                <td class="center"></td>
+                <td class="center"></td>
+                <td class="center" style="background: #F8FAFC;"></td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <!-- Bas de page officiel avec mentions légales et cachet -->
-        <div style="margin-top: 14px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 11px; color: #333; border-top: 1px dashed #999; padding-top: 8px;">
-          <div>
-            <div><em>Pour faire valoir ce que de droit.</em></div>
-            <div>Mode de règlement : <strong>${escapeHtml(e.modePaiement)}</strong> — Devise : <strong>${escapeHtml(e.devise || 'FCFA')}</strong></div>
-            <div style="font-size: 10px; color: #666; margin-top: 2px;">Document certifié généré par le Système Intégré de Paie ACPE</div>
+        <!-- Bas de page : signatures et validation (abaissé vers le bas de la page) -->
+        <div class="bulletin-bottom-info" style="margin-top: 55px; border-top: 1px solid #CBD5E1; padding-top: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="text-align: left; width: 45%;">
+              <div style="font-weight: 700; font-size: 11.5px; color: #1F4E79; text-transform: uppercase; letter-spacing: 0.3px;">Signature de l'employé</div>
+              <div style="margin-top: 50px; border-bottom: 1px dashed #94A3B8; width: 220px;"></div>
+            </div>
+            <div style="text-align: right; width: 45%; display: flex; flex-direction: column; align-items: flex-end;">
+              <div style="font-weight: 700; font-size: 11.5px; color: #1F4E79; text-transform: uppercase; letter-spacing: 0.3px;">Signature de l'employeur</div>
+              <div style="margin-top: 50px; border-bottom: 1px dashed #94A3B8; width: 220px;"></div>
+            </div>
           </div>
-          <div style="text-align: right;">
-            <div style="font-weight: 600;">Direction Générale — ACPE</div>
-            <div style="margin-top: 28px; font-style: italic; color: #555;">Cachet & Signature de l'Ordonnateur</div>
+          <div style="text-align: center; margin-top: 24px; font-size: 9.5px; color: #64748B; font-style: italic;">
+            Validation de conformité : Document certifié conforme généré par le Système Intégré de Paie ACPE
           </div>
         </div>
       </div>
@@ -3061,6 +4116,16 @@
     if (modal) {
       modal.classList.add('active');
       modal.setAttribute('aria-hidden', 'false');
+
+      // Réinitialisation absolue du défilement au sommet pour garantir la visibilité complète de l'en-tête
+      const modalBody = modal.querySelector('.payslip-modal-body');
+      if (modalBody) {
+        modalBody.scrollTop = 0;
+      }
+      if (container) {
+        container.scrollTop = 0;
+      }
+      modal.scrollTop = 0;
     }
   }
 
@@ -3072,7 +4137,7 @@
     }
   }
 
-  // Téléchargement PDF certifié du bulletin officiel
+  // Téléchargement PDF certifié du bulletin officiel conforme à bulletin_template.html
   async function downloadPayslipPdf(matricule) {
     const data = getBulletinData(matricule);
     if (!data) {
@@ -3080,8 +4145,21 @@
       return;
     }
 
-    showToast(`Génération du bulletin officiel PDF ACPE pour ${data.employe.nom}...`);
+    const agentNom = (data.employe && data.employe.nom) || 'Agent';
+    showToast(`Génération du bulletin officiel PDF ACPE pour ${agentNom}...`);
 
+    // 1. Priorité absolue : Moteur vectoriel officiel jsPDF + AutoTable (conforme au template)
+    if (typeof window.downloadAcpeBulletinPdf === 'function') {
+      try {
+        const res = window.downloadAcpeBulletinPdf(data);
+        showToast(`Bulletin PDF téléchargé avec succès : ${res.filename}`);
+        return;
+      } catch (err) {
+        console.error('Erreur lors de la génération avec le moteur ACPE jsPDF:', err);
+      }
+    }
+
+    // 2. Fallback html2pdf si le bundle n'était pas encore initialisé
     const exportContainer = document.getElementById('payslip-pdf-export-container');
     if (!exportContainer) {
       window.print();
@@ -3167,6 +4245,11 @@
 
   // Traitement des actions du cycle de paie
   async function handleCycleAction(action) {
+    if (action === 'goto-paie') {
+      switchPage('paie');
+      return;
+    }
+
     if (AppState.isCalculating) return;
 
     const bannerCta = document.getElementById('cycle-cta-btn');
@@ -3231,12 +4314,24 @@
      -------------------------------------------------------------------------- */
   function initEventListeners() {
     // 1. Navigation par onglets (Sidebar)
-    const navLinks = document.querySelectorAll('.nav-link');
+    const navLinks = document.querySelectorAll('.sidebar-nav a.nav-link');
     navLinks.forEach(link => {
       link.addEventListener('click', (e) => {
         e.preventDefault();
-        const targetPage = link.getAttribute('href').replace('#', '');
+        const href = link.getAttribute('href');
+        if (!href) return;
+        const targetPage = href.replace('#', '') || 'dashboard';
         switchPage(targetPage);
+
+        try {
+          if (history.pushState) {
+            history.pushState(null, '', '#' + targetPage);
+          } else {
+            window.location.hash = targetPage;
+          }
+        } catch (err) {
+          // ignore potential iframe restrictions
+        }
 
         // Fermer la sidebar mobile au clic
         const sidebar = document.getElementById('sidebar');
@@ -3256,15 +4351,55 @@
       }
     });
 
-    // 2. Menu Mobile (Burger)
+    // 2. Menu Latéral (Mobile Drawer & Mode Plein Écran / Réduction sur écrans larges)
     const burgerBtn = document.getElementById('burger-btn');
     const sidebar = document.getElementById('sidebar');
     const sidebarOverlay = document.getElementById('sidebar-overlay');
     const sidebarCloseBtn = document.getElementById('sidebar-close-btn');
+    const sidebarCollapseBtn = document.getElementById('sidebar-collapse-btn');
+    const appContainer = document.querySelector('.app-container');
 
-    function openSidebar() {
-      if (sidebar) sidebar.classList.add('open');
-      if (sidebarOverlay) sidebarOverlay.classList.add('active');
+    function toggleDesktopSidebar(forceState) {
+      if (!appContainer) return;
+      const isCurrentlyCollapsed = appContainer.classList.contains('sidebar-collapsed');
+      const shouldCollapse = (typeof forceState === 'boolean') ? forceState : !isCurrentlyCollapsed;
+
+      hideNavTooltip();
+
+      if (shouldCollapse) {
+        appContainer.classList.add('sidebar-collapsed');
+        try { localStorage.setItem('acpe_sidebar_collapsed', 'true'); } catch (e) {}
+        if (burgerBtn) {
+          burgerBtn.setAttribute('title', 'Déployer le menu complet (Ctrl+B)');
+          burgerBtn.setAttribute('aria-label', 'Déployer le menu latéral');
+        }
+        if (sidebarCollapseBtn) {
+          sidebarCollapseBtn.setAttribute('title', 'Déployer le menu complet (Ctrl+B)');
+          sidebarCollapseBtn.setAttribute('aria-label', 'Déployer le menu latéral');
+        }
+        showToast("Menu réduit : Signalétique par icônes active");
+      } else {
+        appContainer.classList.remove('sidebar-collapsed');
+        try { localStorage.setItem('acpe_sidebar_collapsed', 'false'); } catch (e) {}
+        if (burgerBtn) {
+          burgerBtn.setAttribute('title', 'Réduire en barre d\'icônes (Ctrl+B)');
+          burgerBtn.setAttribute('aria-label', 'Réduire le menu latéral');
+        }
+        if (sidebarCollapseBtn) {
+          sidebarCollapseBtn.setAttribute('title', 'Réduire en barre d\'icônes (Ctrl+B)');
+          sidebarCollapseBtn.setAttribute('aria-label', 'Réduire le menu latéral');
+        }
+        showToast("Menu latéral déployé");
+      }
+    }
+
+    function handleMenuToggle() {
+      if (window.innerWidth >= 1024) {
+        toggleDesktopSidebar();
+      } else {
+        if (sidebar) sidebar.classList.add('open');
+        if (sidebarOverlay) sidebarOverlay.classList.add('active');
+      }
     }
 
     function closeSidebar() {
@@ -3272,9 +4407,85 @@
       if (sidebarOverlay) sidebarOverlay.classList.remove('active');
     }
 
-    if (burgerBtn) burgerBtn.addEventListener('click', openSidebar);
+    if (burgerBtn) burgerBtn.addEventListener('click', handleMenuToggle);
     if (sidebarOverlay) sidebarOverlay.addEventListener('click', closeSidebar);
     if (sidebarCloseBtn) sidebarCloseBtn.addEventListener('click', closeSidebar);
+    if (sidebarCollapseBtn) {
+      sidebarCollapseBtn.addEventListener('click', () => {
+        toggleDesktopSidebar();
+      });
+    }
+
+    // Tooltip flottant pour la signalétique (barre d'icônes)
+    let navTooltipEl = document.querySelector('.acpe-nav-tooltip');
+    if (!navTooltipEl) {
+      navTooltipEl = document.createElement('div');
+      navTooltipEl.className = 'acpe-nav-tooltip';
+      document.body.appendChild(navTooltipEl);
+    }
+
+    function showNavTooltip(el, text) {
+      if (!appContainer || !appContainer.classList.contains('sidebar-collapsed') || window.innerWidth < 1024) {
+        hideNavTooltip();
+        return;
+      }
+      if (!navTooltipEl) return;
+      const rect = el.getBoundingClientRect();
+      navTooltipEl.textContent = text;
+      navTooltipEl.style.top = `${rect.top + rect.height / 2}px`;
+      navTooltipEl.style.left = `${rect.right + 12}px`;
+      navTooltipEl.classList.add('visible');
+    }
+
+    function hideNavTooltip() {
+      if (navTooltipEl) navTooltipEl.classList.remove('visible');
+    }
+
+    if (sidebar) {
+      const tooltipTargets = sidebar.querySelectorAll('[data-tooltip]');
+      tooltipTargets.forEach(target => {
+        target.addEventListener('mouseenter', () => {
+          const text = target.getAttribute('data-tooltip');
+          if (text) showNavTooltip(target, text);
+        });
+        target.addEventListener('mouseleave', hideNavTooltip);
+        target.addEventListener('click', hideNavTooltip);
+      });
+    }
+
+    // Raccourci clavier Ctrl+B / Cmd+B pour basculer le menu latéral
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'b' || e.key === 'B')) {
+        const activeTag = document.activeElement ? document.activeElement.tagName : '';
+        if (activeTag !== 'INPUT' && activeTag !== 'TEXTAREA' && activeTag !== 'SELECT') {
+          e.preventDefault();
+          if (window.innerWidth >= 1024) {
+            toggleDesktopSidebar();
+          } else {
+            if (sidebar && sidebar.classList.contains('open')) {
+              closeSidebar();
+            } else {
+              handleMenuToggle();
+            }
+          }
+        }
+      }
+    });
+
+    // Restaurer l'état mémorisé sur écran large au chargement
+    try {
+      if (window.innerWidth >= 1024 && localStorage.getItem('acpe_sidebar_collapsed') === 'true') {
+        if (appContainer) appContainer.classList.add('sidebar-collapsed');
+        if (burgerBtn) {
+          burgerBtn.setAttribute('title', 'Déployer le menu complet (Ctrl+B)');
+          burgerBtn.setAttribute('aria-label', 'Déployer le menu latéral');
+        }
+        if (sidebarCollapseBtn) {
+          sidebarCollapseBtn.setAttribute('title', 'Déployer le menu complet (Ctrl+B)');
+          sidebarCollapseBtn.setAttribute('aria-label', 'Déployer le menu latéral');
+        }
+      }
+    } catch (e) {}
 
     // 3. Sélecteur de période de paie
     const periodSelect = document.getElementById('period-select');
@@ -3342,8 +4553,15 @@
       });
     }
 
-    // 8. Clics délégués sur les tableaux (Voir bulletin / PDF)
+    // 8. Clics délégués sur les tableaux (Voir bulletin / PDF / Fiche Agent)
     document.addEventListener('click', (e) => {
+      const viewAgentBtn = e.target.closest('.view-agent-profile-btn');
+      if (viewAgentBtn) {
+        const matricule = viewAgentBtn.getAttribute('data-matricule');
+        openAgentDetailModal(matricule);
+        return;
+      }
+
       const viewBtn = e.target.closest('.view-slip-btn');
       if (viewBtn) {
         const matricule = viewBtn.getAttribute('data-matricule');
@@ -3368,7 +4586,7 @@
       }
     });
 
-    // 9. Modale Bulletin de paie
+    // 9. Modale Bulletin de paie (Exclusivité pour les bulletins de salaire)
     const modalCloseBtn = document.getElementById('modal-close-btn');
     const modalCloseFooterBtn = document.getElementById('modal-close-footer-btn');
     const modalBackdrop = document.getElementById('payslip-modal');
@@ -3397,14 +4615,56 @@
       });
     }
 
-    // Clavier Échap
+    // 9b. Modale Fiche Statutaire de l'Agent Public
+    const closeAgentDetailBtn = document.getElementById('close-agent-detail-btn');
+    const btnCloseAgentDetail = document.getElementById('btn-close-agent-detail');
+    const btnViewAgentPayslip = document.getElementById('btn-view-agent-payslip');
+    const agentDetailModal = document.getElementById('agent-detail-modal');
+
+    if (closeAgentDetailBtn) closeAgentDetailBtn.addEventListener('click', closeAgentDetailModal);
+    if (btnCloseAgentDetail) btnCloseAgentDetail.addEventListener('click', closeAgentDetailModal);
+    if (agentDetailModal) {
+      agentDetailModal.addEventListener('click', (e) => {
+        if (e.target === agentDetailModal) closeAgentDetailModal();
+      });
+    }
+    if (btnViewAgentPayslip) {
+      btnViewAgentPayslip.addEventListener('click', () => {
+        const mat = AppState.currentSelectedMatricule;
+        closeAgentDetailModal();
+        if (mat) {
+          openPayslipModal(mat);
+        }
+      });
+    }
+
+    // Gestionnaire universel de fermeture des modales (icône croix, clic extérieur & Échap)
+    document.addEventListener('click', (e) => {
+      const closeBtn = e.target.closest('.modal-close-btn');
+      if (closeBtn) {
+        const backdrop = closeBtn.closest('.modal-backdrop');
+        if (backdrop) {
+          backdrop.classList.remove('active');
+          backdrop.setAttribute('aria-hidden', 'true');
+        }
+      }
+    });
+
+    document.querySelectorAll('.modal-backdrop').forEach(modal => {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.classList.remove('active');
+          modal.setAttribute('aria-hidden', 'true');
+        }
+      });
+    });
+
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        closePayslipModal();
-        const addAgentModal = document.getElementById('add-agent-modal');
-        if (addAgentModal) addAgentModal.classList.remove('active');
-        const addVarModal = document.getElementById('add-variable-modal');
-        if (addVarModal) addVarModal.classList.remove('active');
+        document.querySelectorAll('.modal-backdrop.active').forEach(m => {
+          m.classList.remove('active');
+          m.setAttribute('aria-hidden', 'true');
+        });
       }
     });
 
@@ -3414,7 +4674,7 @@
       btn.addEventListener('click', () => {
         const actionName = btn.getAttribute('data-action-name');
         if (actionName.includes('Calculer')) {
-          handleCycleAction('calculate');
+          switchPage('paie');
         } else if (actionName.includes('Exporter')) {
           showToast('Génération de l\'export comptable des salaires en FCFA (Format Chorus/Trésor).');
         } else if (actionName.includes('Ordre de virement')) {
@@ -3696,7 +4956,7 @@
        ÉCOUTEURS : DÉPARTEMENTS & STRUCTURES EPA
        ---------------------------------------------------------------------- */
     const btnOpenAddDept = document.getElementById('btn-open-add-dept');
-    const closeAddDeptBtn = document.getElementById('close-add-dept-modal');
+    const closeAddDeptBtn = document.getElementById('close-add-dept-modal') || document.getElementById('close-add-dept-btn');
     const btnCancelAddDept = document.getElementById('btn-cancel-add-dept');
     const addDeptModal = document.getElementById('add-dept-modal');
     const formAddDept = document.getElementById('form-add-department');
@@ -3805,7 +5065,7 @@
     }
 
     // Modal Mutation / Transfert d'agent
-    const closeTransferAgentBtn = document.getElementById('close-transfer-agent-modal');
+    const closeTransferAgentBtn = document.getElementById('close-transfer-agent-modal') || document.getElementById('close-transfer-btn');
     const btnCancelTransferAgent = document.getElementById('btn-cancel-transfer-agent');
     const transferAgentModal = document.getElementById('transfer-agent-modal');
     const formTransferAgent = document.getElementById('form-transfer-agent');
@@ -3889,7 +5149,7 @@
        ÉCOUTEURS : CONTRATS DES AGENTS
        ---------------------------------------------------------------------- */
     const btnOpenAddContract = document.getElementById('btn-open-add-contract');
-    const closeAddContractBtn = document.getElementById('close-add-contract-modal');
+    const closeAddContractBtn = document.getElementById('close-add-contract-modal') || document.getElementById('close-add-contract-btn');
     const btnCancelAddContract = document.getElementById('btn-cancel-add-contract');
     const addContractModal = document.getElementById('add-contract-modal');
     const formAddContract = document.getElementById('form-add-contract');
@@ -4002,7 +5262,7 @@
        ÉCOUTEURS : DEMANDES SELF-SERVICE DES AGENTS
        ---------------------------------------------------------------------- */
     const btnOpenAddRequest = document.getElementById('btn-open-add-request');
-    const closeAddReqBtn = document.getElementById('close-add-request-modal');
+    const closeAddReqBtn = document.getElementById('close-add-request-modal') || document.getElementById('close-add-req-btn');
     const btnCancelAddReq = document.getElementById('btn-cancel-add-request');
     const addRequestModal = document.getElementById('add-request-modal');
     const formAddRequest = document.getElementById('form-add-request');
@@ -4022,8 +5282,8 @@
         const mat = document.getElementById('req-agent-select').value;
         const emp = MockData.employees.find(e => e.matricule === mat) || { nom: 'Agent', direction: 'Direction Générale' };
         const type = document.getElementById('req-type-select').value;
-        const period = document.getElementById('req-period-input').value.trim();
-        const motive = document.getElementById('req-motive-input').value.trim();
+        const period = (document.getElementById('req-dates') || document.getElementById('req-period-input') || {}).value?.trim() || '';
+        const motive = (document.getElementById('req-motive') || document.getElementById('req-motive-input') || {}).value?.trim() || '';
 
         const newReq = {
           id: `DEM-2026-0${MockData.requests.length + 85}`,
@@ -4071,7 +5331,7 @@
     }
 
     // Modale Détail & Workflow de demande
-    const closeReqDetailBtn = document.getElementById('close-request-detail-modal');
+    const closeReqDetailBtn = document.getElementById('close-request-detail-modal') || document.getElementById('close-req-detail-btn');
     const btnCloseReqDetail = document.getElementById('btn-close-req-detail');
     const reqDetailModal = document.getElementById('request-detail-modal');
     const btnApproveReq = document.getElementById('btn-approve-request');
@@ -4199,7 +5459,7 @@
     /* ----------------------------------------------------------------------
        ÉCOUTEURS : HISTORIQUE D'AUDIT & SÉCURITÉ
        ---------------------------------------------------------------------- */
-    const closeAuditDetailBtn = document.getElementById('close-audit-detail-modal');
+    const closeAuditDetailBtn = document.getElementById('close-audit-detail-modal') || document.getElementById('close-audit-detail-btn');
     const btnCloseAuditDetail = document.getElementById('btn-close-audit-detail');
     const auditDetailModal = document.getElementById('audit-detail-modal');
     const btnExportAuditLog = document.getElementById('btn-export-audit-log');
@@ -4276,10 +5536,232 @@
   }
 
   /* --------------------------------------------------------------------------
+     9.5. GESTION DU SPLASH SCREEN, AUTHENTIFICATION ET DÉCONNEXION
+     -------------------------------------------------------------------------- */
+  const USERS_ACPE = {
+    'ACPE-001': {
+      matricule: 'ACPE-001',
+      nom: 'MOUKOKO Steve',
+      initiales: 'SM',
+      role: 'Chef de Service Paie',
+      departement: 'Direction des Ressources Humaines • ACPE'
+    },
+    'ACPE-002': {
+      matricule: 'ACPE-002',
+      nom: 'NGOMA Clarisse',
+      initiales: 'CN',
+      role: 'Directrice des Ressources Humaines',
+      departement: 'Direction Générale RH • ACPE'
+    },
+    'ACPE-003': {
+      matricule: 'ACPE-003',
+      nom: 'BILONGO Alain',
+      initiales: 'AB',
+      role: 'Contrôleur Financier Trésor',
+      departement: 'Direction Financière & Comptable'
+    }
+  };
+
+  function updateHeaderUserDisplay(user) {
+    if (!user) return;
+    const hAvatar = document.getElementById('header-user-avatar');
+    const hName = document.getElementById('header-user-name');
+    const hRole = document.getElementById('header-user-role');
+    const ddName = document.getElementById('dropdown-user-name');
+    const ddRole = document.getElementById('dropdown-user-role');
+
+    if (hAvatar) hAvatar.textContent = user.initiales || 'AC';
+    if (hName) hName.textContent = user.nom;
+    if (hRole) hRole.textContent = user.role;
+    if (ddName) ddName.textContent = user.nom;
+    if (ddRole) ddRole.textContent = user.role;
+  }
+
+  function logoutUser() {
+    sessionStorage.removeItem('acpe_auth_user');
+    const userDropdown = document.getElementById('user-dropdown-menu');
+    const userProfileBtn = document.getElementById('user-profile-btn');
+    const loginOverlay = document.getElementById('acpe-login-overlay');
+    const appContainer = document.querySelector('.app-container');
+    const loginError = document.getElementById('acpe-login-error');
+
+    if (userDropdown) userDropdown.classList.remove('active');
+    if (userProfileBtn) userProfileBtn.setAttribute('aria-expanded', 'false');
+
+    if (loginError) loginError.style.display = 'none';
+    if (loginOverlay) loginOverlay.classList.remove('hidden');
+    if (appContainer) appContainer.classList.add('auth-locked');
+
+    showToast('Session fermée : Vous avez été déconnecté avec succès.');
+  }
+
+  function initSplashScreenAndAuth() {
+    const splashScreen = document.getElementById('acpe-splash');
+    const splashStatus = document.getElementById('acpe-splash-status');
+    const loginOverlay = document.getElementById('acpe-login-overlay');
+    const loginForm = document.getElementById('acpe-login-form');
+    const loginUsername = document.getElementById('login-username');
+    const loginPassword = document.getElementById('login-password');
+    const loginError = document.getElementById('acpe-login-error');
+    const togglePwdBtn = document.getElementById('toggle-pwd-btn');
+    const userProfileBtn = document.getElementById('user-profile-btn');
+    const userDropdownMenu = document.getElementById('user-dropdown-menu');
+    const headerLogoutBtn = document.getElementById('header-logout-btn');
+    const sidebarLogoutBtn = document.getElementById('sidebar-logout-btn');
+    const appContainer = document.querySelector('.app-container');
+
+    // 1. Gestion du dropdown utilisateur dans le header
+    if (userProfileBtn && userDropdownMenu) {
+      userProfileBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = userDropdownMenu.classList.contains('active');
+        if (isOpen) {
+          userDropdownMenu.classList.remove('active');
+          userProfileBtn.setAttribute('aria-expanded', 'false');
+        } else {
+          userDropdownMenu.classList.add('active');
+          userProfileBtn.setAttribute('aria-expanded', 'true');
+        }
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!userProfileBtn.contains(e.target) && !userDropdownMenu.contains(e.target)) {
+          userDropdownMenu.classList.remove('active');
+          userProfileBtn.setAttribute('aria-expanded', 'false');
+        }
+      });
+
+      const btnProfileSettings = document.getElementById('btn-profile-settings');
+      if (btnProfileSettings) {
+        btnProfileSettings.addEventListener('click', (e) => {
+          e.preventDefault();
+          userDropdownMenu.classList.remove('active');
+          userProfileBtn.setAttribute('aria-expanded', 'false');
+          switchPage('settings');
+        });
+      }
+    }
+
+    // 2. Déconnexion via le bouton du Header
+    if (headerLogoutBtn) {
+      headerLogoutBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        logoutUser();
+      });
+    }
+
+    // 3. Déconnexion via le bouton de la Barre Latérale (Sidebar)
+    if (sidebarLogoutBtn) {
+      sidebarLogoutBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        logoutUser();
+      });
+    }
+
+    // 4. Puces de comptes rapides pour démonstration
+    const chips = document.querySelectorAll('.acpe-auth-role-chip');
+    chips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        const u = chip.getAttribute('data-user');
+        if (loginUsername) loginUsername.value = u;
+        if (loginPassword) loginPassword.value = 'acpe2026';
+        if (loginError) loginError.style.display = 'none';
+      });
+    });
+
+    // 5. Afficher / Masquer mot de passe
+    if (togglePwdBtn && loginPassword) {
+      togglePwdBtn.addEventListener('click', () => {
+        const isPwd = loginPassword.type === 'password';
+        loginPassword.type = isPwd ? 'text' : 'password';
+        const iconSvg = togglePwdBtn.querySelector('svg');
+        if (iconSvg) {
+          if (isPwd) {
+            iconSvg.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+          } else {
+            iconSvg.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+          }
+        }
+      });
+    }
+
+    // 6. Soumission du formulaire de connexion
+    if (loginForm) {
+      loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const enteredUser = (loginUsername ? loginUsername.value.trim().toUpperCase() : '');
+        const enteredPwd = (loginPassword ? loginPassword.value : '');
+
+        let activeUser = USERS_ACPE[enteredUser];
+        if (!activeUser) {
+          // Si correspondance souple
+          const key = Object.keys(USERS_ACPE).find(k => enteredUser.includes(k) || enteredUser === 'ADMIN' || enteredUser === 'STEVE');
+          if (key) activeUser = USERS_ACPE[key];
+        }
+
+        if (activeUser || enteredPwd === 'acpe2026' || enteredUser.startsWith('ACPE')) {
+          const finalUser = activeUser || {
+            matricule: enteredUser || 'ACPE-001',
+            nom: enteredUser || 'MOUKOKO Steve',
+            initiales: 'SM',
+            role: 'Gestionnaire Paie EPA',
+            departement: 'Ressources Humaines • ACPE'
+          };
+
+          sessionStorage.setItem('acpe_auth_user', finalUser.matricule);
+          updateHeaderUserDisplay(finalUser);
+
+          if (loginError) loginError.style.display = 'none';
+          if (loginOverlay) loginOverlay.classList.add('hidden');
+          if (appContainer) appContainer.classList.remove('auth-locked');
+
+          showToast(`Connexion réussie : Bienvenue ${finalUser.nom} (${finalUser.role})`);
+        } else {
+          if (loginError) {
+            loginError.style.display = 'flex';
+          }
+        }
+      });
+    }
+
+    // 7. Cycle de vie du Splash Screen
+    const savedUserKey = sessionStorage.getItem('acpe_auth_user');
+
+    setTimeout(() => {
+      if (splashStatus) {
+        splashStatus.textContent = 'Synchronisation Trésor Public & Grilles Indiciaires 2026...';
+      }
+    }, 600);
+
+    setTimeout(() => {
+      if (splashStatus) {
+        splashStatus.textContent = 'Vérification du certificat agent...';
+      }
+    }, 1200);
+
+    setTimeout(() => {
+      if (splashScreen) {
+        splashScreen.classList.add('fade-out');
+      }
+
+      if (savedUserKey && USERS_ACPE[savedUserKey]) {
+        updateHeaderUserDisplay(USERS_ACPE[savedUserKey]);
+        if (loginOverlay) loginOverlay.classList.add('hidden');
+        if (appContainer) appContainer.classList.remove('auth-locked');
+      } else {
+        if (loginOverlay) loginOverlay.classList.remove('hidden');
+        if (appContainer) appContainer.classList.add('auth-locked');
+        if (loginUsername) loginUsername.focus();
+      }
+    }, 1700);
+  }
+
+  /* --------------------------------------------------------------------------
      10. POINT D'ENTRÉE AU CHARGEMENT DU DOCUMENT
      -------------------------------------------------------------------------- */
   document.addEventListener('DOMContentLoaded', () => {
     initEventListeners();
+    initSplashScreenAndAuth();
 
     // Rendu initial avec la période par défaut
     const initialSummary = MockData.getSummaryByPeriod(AppState.currentPeriod);
